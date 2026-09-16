@@ -276,6 +276,9 @@ select,input[type=text]{
   display:none;
 }
 .ai-output.show{display:block;}
+.draft-label{display:block;margin-top:12px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+.draft-message{width:100%;min-height:92px;margin-top:6px;resize:vertical;font:inherit;font-size:13px;line-height:1.5;color:var(--ink);background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:9px 10px;}
+.copy-message{margin-top:7px;}
 .loading-dots{display:inline-flex;gap:3px;align-items:center;}
 .loading-dots span{width:5px;height:5px;border-radius:50%;background:var(--accent);animation:blink 1.2s infinite;}
 .loading-dots span:nth-child(2){animation-delay:.2s;}
@@ -399,6 +402,9 @@ function localAgentResponse(prompt){
   if (jsonMatch) {
     try { profile = JSON.parse(jsonMatch[0]); } catch(e) { profile = null; }
   }
+  if (profile?.client_id) {
+    profile = {...(DATA.clients_table.find(c=>c.client_id === profile.client_id) || {}), ...profile};
+  }
   const segment = profile?.segment_ia || 'client';
   const risk = Number(profile?.risque_churn || 0);
   const satisfaction = Number(profile?.satisfaction || 0);
@@ -441,6 +447,54 @@ function localAgentResponse(prompt){
   return `- La base compte ${DATA.kpi_globaux.nb_clients} clients et ${DATA.kpi_globaux.nb_commandes} commandes.\n- Le chiffre d'affaires total est de ${fmtFCFA(DATA.kpi_globaux.ca_total)}.\n- Les clients actifs représentent ${DATA.kpi_globaux.taux_actifs_90j}% de la base.\n- Consultez les vues Marketing, Commercial et Relation client pour une recommandation ciblée.`;
 }
 
+function profileFromPrompt(prompt){
+  const match = prompt.match(/\{[\s\S]*\}/);
+  if (!match) return null;
+  try {
+    const raw = JSON.parse(match[0]);
+    return {...(DATA.clients_table.find(c=>c.client_id === raw.client_id) || {}), ...raw};
+  } catch(e) { return null; }
+}
+
+function draftMessage(profile, prompt){
+  if (!profile?.client_id) return null;
+  const intent = prompt.replace(/\{[\s\S]*\}/, '').toLowerCase();
+  const product = profile.produit_favori || 'vos achats habituels';
+  const suggested = profile.produits_suggeres?.join(' et ') || 'une sélection complémentaire à vos habitudes';
+  const risk = Number(profile.risque_churn || 0);
+  if (intent.includes('vente') || intent.includes('whatsapp')) {
+    return `Bonjour,\n\nUne attention particulière pour vous : après ${product}, nous vous avons réservé une sélection autour de ${suggested}. Une façon élégante de prolonger votre expérience ELAVAGNON, à votre rythme.\n\nNotre équipe se tient à votre disposition pour vous conseiller.\n\nAu plaisir de vous accompagner.`;
+  }
+  if (risk >= 60 || intent.includes('risque élevé') || intent.includes('rétention')) {
+    return `Bonjour,\n\nNous espérons que votre dernière expérience avec ${product} a répondu à vos attentes. Votre avis nous est précieux et nous aimerions pouvoir vous accompagner encore mieux.\n\nDites-nous simplement comment nous pouvons vous être utiles : notre équipe sera heureuse de vous proposer une attention personnalisée.\n\nBien cordialement,\nL'équipe ELAVAGNON`;
+  }
+  return `Bonjour,\n\nMerci pour votre confiance envers ELAVAGNON. Nous avons imaginé une proposition personnalisée autour de ${product}, pensée pour prolonger agréablement votre expérience.\n\nSouhaitez-vous que notre équipe vous en présente les détails ?\n\nAu plaisir de vous retrouver,\nL'équipe ELAVAGNON`;
+}
+
+function renderAgentResult(outEl, response, prompt){
+  const profile = profileFromPrompt(prompt);
+  outEl.textContent = response;
+  const message = draftMessage(profile, prompt);
+  if (!message) return;
+  const label = document.createElement('label');
+  label.className = 'draft-label';
+  label.textContent = 'Message proposé, modifiable avant envoi';
+  const textarea = document.createElement('textarea');
+  textarea.className = 'draft-message';
+  textarea.value = message;
+  textarea.setAttribute('aria-label', 'Message client modifiable');
+  const copy = document.createElement('button');
+  copy.className = 'btn sm ghost copy-message';
+  copy.type = 'button';
+  copy.textContent = 'Copier le message';
+  copy.addEventListener('click', async () => {
+    await navigator.clipboard.writeText(textarea.value);
+    copy.textContent = 'Message copié';
+    setTimeout(() => { copy.textContent = 'Copier le message'; }, 1600);
+  });
+  outEl.append(label, textarea, copy);
+}
+
 async function askAgent(prompt, outEl, opts={}){
   if(!claudeSample){
     try {
@@ -449,7 +503,7 @@ async function askAgent(prompt, outEl, opts={}){
   }
   if(!claudeSample){
     outEl.classList.add('show');
-    outEl.textContent = localAgentResponse(prompt);
+    renderAgentResult(outEl, localAgentResponse(prompt), prompt);
     return;
   }
   outEl.classList.add('show');
@@ -458,9 +512,9 @@ async function askAgent(prompt, outEl, opts={}){
     const res = await claudeSample([
       {role:'user', content: (opts.system || CONTEXT_SUMMARY) + "\n\n" + prompt}
     ], { modelTier:'default', onText: ({text}) => { outEl.textContent = text; } });
-    outEl.textContent = res.text;
+    renderAgentResult(outEl, res.text, prompt);
   }catch(err){
-    outEl.textContent = localAgentResponse(prompt);
+    renderAgentResult(outEl, localAgentResponse(prompt), prompt);
   }
 }
 
