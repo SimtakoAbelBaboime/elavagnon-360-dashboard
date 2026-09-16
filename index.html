@@ -394,6 +394,36 @@ Réponds toujours en français, de façon concise (5-8 lignes maximum), concrèt
 
 function localAgentResponse(prompt){
   const text = prompt.toLowerCase();
+  const jsonMatch = prompt.match(/\{[\s\S]*\}/);
+  let profile = null;
+  if (jsonMatch) {
+    try { profile = JSON.parse(jsonMatch[0]); } catch(e) { profile = null; }
+  }
+  const segment = profile?.segment_ia || 'client';
+  const risk = Number(profile?.risque_churn || 0);
+  const satisfaction = Number(profile?.satisfaction || 0);
+  const recency = Number(profile?.recence_jours || 0);
+  const orders = Number(profile?.nb_commandes || 0);
+  const favorite = profile?.produit_favori || 'son produit habituel';
+  const city = profile?.ville || 'sa ville';
+  const channel = profile?.canal_acquisition || 'son canal habituel';
+  const suggested = profile?.produits_suggeres?.join(' et ') || 'une offre complémentaire';
+  const urgency = risk >= 60 ? 'très urgente' : risk >= 35 ? 'prioritaire' : 'préventive';
+  const contact = risk >= 60 || recency > 180 ? 'un appel ou un message WhatsApp personnalisé' : `une relance via ${channel}`;
+  const offer = segment === 'Brand Lover' ? `un accès privilégié lié à ${favorite}`
+    : segment === 'Explorateur à risque' || segment === 'Dormant' ? 'une offre de réactivation simple, avec un avantage limité dans le temps'
+    : segment === 'Acheteur Opportuniste' ? 'un pack d’entrée clair et abordable'
+    : 'une recommandation complémentaire à son historique';
+
+  if (profile && (text.includes('plan d\'action') || text.includes('rétention') || text.includes('risque élevé'))) {
+    return `- Priorité ${urgency} pour ${profile.client_id}, à ${city} : risque ${Math.round(risk)}/100 et dernier achat il y a ${Math.round(recency)} jours.\n- Contact : ${contact}, avec un message qui reconnaît son historique de ${Math.round(orders)} commande(s).\n- Satisfaction actuelle : ${satisfaction}/5 ; commencez par résoudre ou vérifier toute insatisfaction avant de vendre.\n- Proposition : ${offer}.\n- Objectif cette semaine : obtenir une réponse et programmer un prochain achat.`;
+  }
+  if (profile && (text.includes('client précis') || text.includes('recommandation personnalisée'))) {
+    return `- ${profile.client_id} est un profil « ${segment} » acquis via ${channel}, avec ${Math.round(orders)} commande(s) et ${satisfaction}/5 de satisfaction.\n- Message conseillé : remercier le client pour ${favorite}, puis proposer une suite adaptée à ses usages.\n- Canal : ${contact}.\n- Offre : ${offer}.\n- Adapter le ton : rassurant si le risque est ${Math.round(risk)}/100, valorisant si le client est fidèle.`;
+  }
+  if (profile && (text.includes('vente') || text.includes('whatsapp'))) {
+    return `- Message pour ${profile.client_id} : « Bonjour, nous avons pensé à vous depuis ${city}. Après ${favorite}, découvrez ${suggested}, choisi pour compléter vos habitudes. »\n- ${Math.round(orders)} commande(s) et un risque de ${Math.round(risk)}/100 : privilégiez une proposition personnalisée plutôt qu'une promotion générique.\n- Contactez-le via ${channel} et proposez une offre découverte courte.\n- Relancez sous 3 jours si le message reste sans réponse.`;
+  }
   if (text.includes('newsletter')) {
     const seg = prompt.match(/segment "([^"]+)"/i)?.[1] || 'vos clients';
     const products = DATA.top_produits_par_segment[seg]?.slice(0,2).map(x=>x.produit).join(' et ') || 'vos produits stars';
