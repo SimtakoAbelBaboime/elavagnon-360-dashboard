@@ -435,6 +435,35 @@ function localAgentResponse(prompt){
     const products = DATA.top_produits_par_segment[seg]?.slice(0,2).map(x=>x.produit).join(' et ') || 'vos produits stars';
     return `- Segment ciblé : ${seg}.\n- Objet : Découvrez ${products}, les incontournables du moment.\n- Contenu : présentez ces offres avec un bénéfice concret et un appel à l'action simple.\n- Appuyez le message par une relance personnalisée selon l'historique d'achat.`;
   }
+  if (text.includes('chiffre') || text.includes('ca ') || text.includes('revenu')) {
+    const best = Object.entries(DATA.ca_par_segment).sort((a,b)=>b[1]-a[1])[0];
+    return `- Le chiffre d'affaires total est de ${fmtFCFA(DATA.kpi_globaux.ca_total)} sur ${DATA.kpi_globaux.nb_commandes} commandes.\n- Le panier moyen est de ${fmtFCFA(DATA.kpi_globaux.panier_moyen)}.\n- Le segment qui contribue le plus est « ${best[0]} » avec ${fmtFCFA(best[1])}.\n- Action : protéger ce segment tout en réactivant les segments à risque.`;
+  }
+  if (text.includes('segment') || text.includes('clientèle')) {
+    const ranking = Object.entries(DATA.clients_par_segment).sort((a,b)=>b[1]-a[1]).slice(0,3);
+    return `- Les trois segments les plus représentés sont ${ranking.map(([name,count])=>`« ${name} » (${count})`).join(', ')}.\n- « ${ranking[0][0]} » constitue le premier vivier à travailler.\n- Utilisez une offre différente par segment : fidélisation pour les Brand Lovers, réactivation pour les Dormants, découverte pour les Opportunistes.`;
+  }
+  if (text.includes('produit') || text.includes('offre')) {
+    const products = Object.entries(DATA.top_produits_par_segment).flatMap(([,items])=>items);
+    const totals = products.reduce((acc,item)=>{ acc[item.produit]=(acc[item.produit]||0)+item.ca; return acc; },{});
+    const best = Object.entries(totals).sort((a,b)=>b[1]-a[1])[0];
+    return `- Le produit le plus performant dans les segments analysés est ${best[0]}, avec environ ${fmtFCFA(best[1])} de CA cumulé.\n- Vérifiez ensuite son adéquation avec le segment ciblé avant toute campagne.\n- Pour une campagne, associez le produit à un bénéfice concret et à une offre courte.`;
+  }
+  if (text.includes('canal') || text.includes('acquisition')) {
+    const channel = [...DATA.performance_canaux].sort((a,b)=>b.ca_moyen-a.ca_moyen)[0];
+    return `- Le canal au CA moyen le plus élevé est ${channel.canal_acquisition}, à ${fmtFCFA(channel.ca_moyen)} par client.\n- Sa satisfaction moyenne est de ${channel.satisfaction_moy}/5 pour ${channel.nb_clients} client(s).\n- Action : conserver ce canal pour les profils à forte valeur et comparer son coût avant d'augmenter le budget.`;
+  }
+  if (text.includes('satisfaction') || text.includes('avis') || text.includes('sentiment')) {
+    return `- La satisfaction moyenne est de ${DATA.kpi_globaux.satisfaction_moyenne}/5.\n- Les avis sont majoritairement positifs (${DATA.sentiment_avis.Positif}), mais ${DATA.sentiment_avis.Négatif} avis restent négatifs.\n- Les thèmes les plus cités sont ${Object.entries(DATA.themes_avis).sort((a,b)=>b[1]-a[1]).slice(0,2).map(([name])=>name).join(' et ')}.\n- Action : traiter ces thèmes dans les messages et le suivi client.`;
+  }
+  if (text.includes('réclamation') || text.includes('plainte') || text.includes('incident')) {
+    const motif = Object.entries(DATA.motifs_reclamations).sort((a,b)=>b[1]-a[1])[0];
+    return `- ${DATA.kpi_globaux.taux_reclamations_non_resolues}% des réclamations ne sont pas résolues.\n- Le motif le plus fréquent est « ${motif[0]} » avec ${motif[1]} cas.\n- Traitez d'abord les réclamations élevées et non résolues, puis confirmez la résolution au client.\n- Mesurez chaque semaine le délai moyen de réponse.`;
+  }
+  if (text.includes('qui') && (text.includes('prior') || text.includes('risque'))) {
+    const atRisk = DATA.clients_risque_eleve.slice(0,3).map(c=>`${c.client_id} (${Math.round(c.risque_churn)}/100)`).join(', ');
+    return `- Les premiers clients à recontacter sont ${atRisk}.\n- Commencez par un message relationnel, sans promotion immédiate.\n- Vérifiez leur dernière expérience et proposez ensuite une solution adaptée à leur segment.`;
+  }
   if (text.includes('rétention') || text.includes('churn') || text.includes('risque élevé')) {
     return `- Priorité 1 : contacter rapidement le client avec un message personnalisé.\n- Priorité 2 : traiter toute réclamation non résolue et confirmer sa résolution.\n- Priorité 3 : proposer une offre liée à son segment et à ses achats précédents.\n- Le tableau compte ${DATA.risque_churn['Élevé']} clients à risque élevé et ${DATA.kpi_globaux.taux_reclamations_non_resolues}% de réclamations non résolues.`;
   }
@@ -471,10 +500,21 @@ function draftMessage(profile, prompt){
   return `Bonjour,\n\nMerci pour votre confiance envers ELAVAGNON. Nous avons imaginé une proposition personnalisée autour de ${product}, pensée pour prolonger agréablement votre expérience.\n\nSouhaitez-vous que notre équipe vous en présente les détails ?\n\nAu plaisir de vous retrouver,\nL'équipe ELAVAGNON`;
 }
 
+function newsletterDraft(prompt){
+  const match = prompt.match(/segment "([^"]+)"/i);
+  if (!match) return null;
+  const segment = match[1];
+  const products = DATA.top_produits_par_segment[segment]?.slice(0,2).map(item=>item.produit).join(' et ') || 'nos offres du moment';
+  const subject = segment === 'Brand Lover' ? 'Une attention exclusive pour nos clients privilégiés'
+    : segment === 'Dormant' || segment === 'Explorateur à risque' ? 'Une belle occasion de vous retrouver'
+    : `Les essentiels ELAVAGNON pour ${segment}`;
+  return `Objet : ${subject}\n\nBonjour,\n\nChez ELAVAGNON, nous avons sélectionné ${products}, des offres choisies pour vous accompagner au quotidien. Découvrez leurs avantages et profitez d'une attention exclusive réservée à notre communauté.\n\nNotre équipe est à votre écoute pour vous conseiller et vous aider à faire le meilleur choix.\n\nÀ très bientôt,\nL'équipe ELAVAGNON`;
+}
+
 function renderAgentResult(outEl, response, prompt){
   const profile = profileFromPrompt(prompt);
   outEl.textContent = response;
-  const message = draftMessage(profile, prompt);
+  const message = draftMessage(profile, prompt) || newsletterDraft(prompt);
   if (!message) return;
   const label = document.createElement('label');
   label.className = 'draft-label';
@@ -681,8 +721,8 @@ function relationHTML(){
     </tr>`).join('');
   return `
   <div class="view-head">
-    <div><div class="eyebrow">Relation client</div><h2>Réputation &amp; rétention</h2>
-    <p>Priorisez les réclamations selon l'urgence réelle, et anticipez les départs grâce au score de risque prédictif.</p></div>
+    <div><div class="eyebrow">Service client</div><h2>Centre de traitement</h2>
+    <p>Traitez les réclamations ouvertes, suivez leur gravité et lancez les actions de rétention qui nécessitent une intervention immédiate.</p></div>
   </div>
   <div class="grid two">
     <div class="panel"><h3>Motifs de réclamation</h3><p class="panel-sub">120 réclamations classifiées</p>
@@ -698,7 +738,7 @@ function relationHTML(){
     <table><thead><tr><th>ID</th><th>Client</th><th>Motif</th><th>Gravité</th><th>Statut</th><th>Segment</th></tr></thead><tbody>${rows}</tbody></table>
     </div>
   </div>
-  <div class="section-title">Clients à risque élevé de départ</div>
+  <div class="section-title">File de rétention prioritaire</div>
   <div class="panel">
     <div style="max-height:320px;overflow-y:auto;">
     <table><thead><tr><th>Client</th><th>Segment</th><th>Score de risque</th><th>Dernier achat</th><th>Ville</th><th></th></tr></thead><tbody>${riskRows}</tbody></table>
@@ -713,8 +753,13 @@ function clientsHTML(){
   const segOpts = segs.map(s=>`<option value="${s}">${s}</option>`).join('');
   return `
   <div class="view-head">
-    <div><div class="eyebrow">Base clients</div><h2>Explorateur clients</h2>
-    <p>Recherchez un client, filtrez par segment ou niveau de risque, et générez une recommandation personnalisée par IA.</p></div>
+    <div><div class="eyebrow">Données clients</div><h2>Profils &amp; segmentation</h2>
+    <p>Explorez la base client, comparez les profils par segment et ouvrez une fiche individuelle pour préparer une recommandation personnalisée.</p></div>
+  </div>
+  <div class="kpi-row">
+    <div class="kpi info"><div class="label">Profils analysés</div><div class="value">${DATA.kpi_globaux.nb_clients}</div><div class="sub">clients dans la base</div></div>
+    <div class="kpi"><div class="label">Segments</div><div class="value">${Object.keys(DATA.clients_par_segment).length}</div><div class="sub">profils comportementaux</div></div>
+    <div class="kpi pos"><div class="label">À forte valeur</div><div class="value">${DATA.clients_par_segment['Brand Lover'] || 0}</div><div class="sub">Brand Lovers identifiés</div></div>
   </div>
   <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
     <input type="text" id="clientSearch" placeholder="Rechercher un ID client (ex: CL014)">
@@ -958,7 +1003,9 @@ function wireInteractions(){
     const csBtn = e.target.closest('[data-crosssell]');
     if(csBtn){
       const o = JSON.parse(csBtn.dataset.crosssell.replace(/&#39;/g,"'"));
-      askAgent(`Rédige un court message WhatsApp (3-4 phrases, ton chaleureux et direct) pour proposer au client ${o.client_id}, qui est un excellent client fidèle, ces produits qu'il n'a pas encore essayés : ${o.produits_suggeres.join(', ')}.`,
+      const client = DATA.clients_table.find(c=>c.client_id===o.client_id) || {};
+      const salesProfile = {...client, ...o};
+      askAgent(`Rédige un court message WhatsApp (3-4 phrases, ton chaleureux et élégant) pour proposer ces produits au client. Profil client : ${JSON.stringify(salesProfile)}. Produits à présenter : ${o.produits_suggeres.join(', ')}.`,
         document.getElementById('outCrossSell'));
     }
     const arBtn = e.target.closest('[data-atrisk]');
