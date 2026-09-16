@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ELAVAGNON 360 — Pilotage client augmenté par l'IA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+/* ============ TOKENS ============ */
+:root{
+  --bg:#F6F4EF;
+  --panel:#FFFFFF;
+  --panel-2:#F0ECE3;
+  --border:#DCD5C4;
+  --ink:#1C1B18;
+  --ink-soft:#5B5648;
+  --muted:#8A8474;
+  --accent:#B7791F;       /* or/amber - énergie */
+  --accent-2:#2F6F4E;     /* vert - croissance */
+  --accent-3:#B23B32;     /* corail/rouge - risque */
+  --accent-4:#2B5D82;     /* bleu ardoise - info */
+  --chip-bg:#EFE7D3;
+  --font-display:'Sora',sans-serif;
+  --font-body:'IBM Plex Sans',sans-serif;
+  --font-mono:'IBM Plex Mono',monospace;
+  --shadow:none;
+  --radius:2px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#12172A;
+    --panel:#181F38;
+    --panel-2:#1E2645;
+    --border:#2C3559;
+    --ink:#F1EFE6;
+    --ink-soft:#C3C2D4;
+    --muted:#8A8FB0;
+    --accent:#F2B544;
+    --accent-2:#3FCB84;
+    --accent-3:#FF7A68;
+    --accent-4:#5AA9E0;
+    --chip-bg:#232B4C;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12172A;
+  --panel:#181F38;
+  --panel-2:#1E2645;
+  --border:#2C3559;
+  --ink:#F1EFE6;
+  --ink-soft:#C3C2D4;
+  --muted:#8A8FB0;
+  --accent:#F2B544;
+  --accent-2:#3FCB84;
+  --accent-3:#FF7A68;
+  --accent-4:#5AA9E0;
+  --chip-bg:#232B4C;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--font-body);
+  font-size:14px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+::-webkit-scrollbar{width:8px;height:8px;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+
+h1,h2,h3,h4{font-family:var(--font-display);margin:0;color:var(--ink);}
+
+.app{
+  display:grid;
+  grid-template-columns:236px 1fr;
+  min-height:100vh;
+}
+
+/* ============ SIDEBAR ============ */
+.sidebar{
+  background:var(--panel);
+  border-right:1px solid var(--border);
+  padding:22px 16px;
+  display:flex;
+  flex-direction:column;
+  gap:22px;
+  position:sticky;
+  top:0;
+  height:100vh;
+}
+.brand{padding:0 6px;}
+.brand .mark{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:34px;height:34px;
+  background:var(--accent);
+  color:#12172A;
+  font-family:var(--font-display);
+  font-weight:800;
+  font-size:15px;
+  border-radius:8px;
+  margin-bottom:10px;
+}
+.brand h1{font-size:17px;letter-spacing:-0.01em;}
+.brand p{margin:2px 0 0;font-size:11.5px;color:var(--muted);}
+
+.nav{display:flex;flex-direction:column;gap:2px;flex:1;}
+.nav button{
+  all:unset;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 12px;
+  border-radius:8px;
+  font-size:13.5px;
+  font-weight:500;
+  color:var(--ink-soft);
+  transition:background .15s ease, color .15s ease;
+}
+.nav button svg{width:16px;height:16px;flex:none;opacity:.85;}
+.nav button:hover{background:var(--panel-2);color:var(--ink);}
+.nav button.active{background:var(--accent);color:#1B1404;font-weight:600;}
+.nav .grp-label{
+  font-size:10.5px;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+  color:var(--muted);
+  padding:14px 12px 4px;
+}
+
+.sidebar-foot{
+  border-top:1px solid var(--border);
+  padding-top:14px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+.theme-toggle{
+  all:unset;
+  cursor:pointer;
+  font-size:11.5px;
+  color:var(--muted);
+  border:1px solid var(--border);
+  padding:6px 10px;
+  border-radius:20px;
+}
+.theme-toggle:hover{color:var(--ink);border-color:var(--accent);}
+.roleflag{font-size:11px;color:var(--muted);}
+
+/* ============ MAIN ============ */
+main{padding:26px 34px 60px;max-width:1180px;}
+.view{display:none;}
+.view.active{display:block;animation:fade .25s ease;}
+@keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+
+.view-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:22px;gap:20px;flex-wrap:wrap;}
+.view-head h2{font-size:24px;letter-spacing:-0.02em;}
+.view-head p{margin:6px 0 0;color:var(--muted);font-size:13px;max-width:560px;}
+.eyebrow{font-size:11px;color:var(--accent);font-weight:600;margin-bottom:6px;}
+
+/* KPI row */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:22px;}
+.kpi{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-left:3px solid var(--accent);
+  padding:14px 16px;
+  border-radius:var(--radius);
+}
+.kpi.pos{border-left-color:var(--accent-2);}
+.kpi.risk{border-left-color:var(--accent-3);}
+.kpi.info{border-left-color:var(--accent-4);}
+.kpi .label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+.kpi .value{font-family:var(--font-display);font-size:24px;font-weight:700;margin-top:6px;}
+.kpi .sub{font-size:11.5px;color:var(--muted);margin-top:3px;}
+
+/* grid layout */
+.grid{display:grid;gap:16px;}
+.grid.two{grid-template-columns:1.3fr 1fr;}
+.grid.three{grid-template-columns:repeat(3,1fr);}
+@media(max-width:900px){.grid.two,.grid.three{grid-template-columns:1fr;}}
+
+.panel{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:18px 18px 14px;
+}
+.panel h3{font-size:14px;font-weight:600;margin-bottom:2px;}
+.panel .panel-sub{font-size:11.5px;color:var(--muted);margin-bottom:14px;}
+.chart-wrap{position:relative;height:230px;}
+.chart-wrap.sm{height:180px;}
+
+/* tables */
+table{width:100%;border-collapse:collapse;font-size:12.5px;}
+th{
+  text-align:left;
+  font-size:10.5px;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  color:var(--muted);
+  border-bottom:1px solid var(--border);
+  padding:7px 8px;
+  font-weight:600;
+}
+td{padding:8px;border-bottom:1px solid var(--border);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:var(--panel-2);}
+.pill{
+  display:inline-block;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:600;
+  background:var(--chip-bg);color:var(--ink-soft);
+}
+.pill.risk-Élevé{background:rgba(178,59,50,.18);color:var(--accent-3);}
+.pill.risk-Moyen{background:rgba(183,121,31,.18);color:var(--accent);}
+.pill.risk-Faible{background:rgba(47,111,78,.18);color:var(--accent-2);}
+
+/* buttons */
+.btn{
+  all:unset;cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--accent);color:#1B1404;
+  font-size:12px;font-weight:600;
+  padding:7px 12px;border-radius:6px;
+  transition:opacity .15s ease;
+}
+.btn:hover{opacity:.85;}
+.btn.ghost{background:transparent;border:1px solid var(--border);color:var(--ink-soft);}
+.btn.ghost:hover{border-color:var(--accent);color:var(--ink);}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+.btn.sm{padding:4px 9px;font-size:11px;}
+
+select,input[type=text]{
+  font-family:var(--font-body);
+  background:var(--panel-2);
+  border:1px solid var(--border);
+  color:var(--ink);
+  padding:7px 10px;
+  border-radius:6px;
+  font-size:12.5px;
+}
+
+/* agent card */
+.agent-card{
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:var(--panel);
+  padding:16px 18px;
+  margin-bottom:14px;
+}
+.agent-card .tag{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--accent-4);margin-bottom:8px;
+}
+.agent-card .tag .dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+.agent-card p{margin:0 0 8px;font-size:13px;color:var(--ink-soft);}
+.agent-card code{font-family:var(--font-mono);font-size:11px;background:var(--panel-2);padding:1px 5px;border-radius:4px;}
+
+.ai-output{
+  margin-top:10px;
+  border-left:2px solid var(--accent);
+  padding:10px 14px;
+  background:var(--panel-2);
+  border-radius:0 6px 6px 0;
+  font-size:13px;
+  color:var(--ink);
+  white-space:pre-wrap;
+  display:none;
+}
+.ai-output.show{display:block;}
+.loading-dots{display:inline-flex;gap:3px;align-items:center;}
+.loading-dots span{width:5px;height:5px;border-radius:50%;background:var(--accent);animation:blink 1.2s infinite;}
+.loading-dots span:nth-child(2){animation-delay:.2s;}
+.loading-dots span:nth-child(3){animation-delay:.4s;}
+@keyframes blink{0%,80%,100%{opacity:.2;}40%{opacity:1;}}
+
+/* chat */
+.chat-box{border:1px solid var(--border);border-radius:var(--radius);background:var(--panel);padding:16px 18px;}
+.chat-log{display:flex;flex-direction:column;gap:10px;max-height:340px;overflow-y:auto;margin-bottom:12px;padding-right:4px;}
+.msg{max-width:88%;padding:9px 12px;border-radius:8px;font-size:13px;}
+.msg.user{align-self:flex-end;background:var(--accent);color:#1B1404;}
+.msg.ai{align-self:flex-start;background:var(--panel-2);color:var(--ink);white-space:pre-wrap;}
+.chat-input-row{display:flex;gap:8px;}
+.chat-input-row input{flex:1;}
+.suggestions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.suggestion-chip{
+  all:unset;cursor:pointer;font-size:11.5px;
+  border:1px solid var(--border);border-radius:20px;
+  padding:5px 11px;color:var(--muted);
+}
+.suggestion-chip:hover{border-color:var(--accent);color:var(--ink);}
+
+.legend-row{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin-top:8px;}
+.legend-row span{display:inline-flex;align-items:center;gap:5px;}
+.legend-row i{width:8px;height:8px;border-radius:2px;display:inline-block;}
+
+.section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:26px 0 10px;}
+.section-title:first-child{margin-top:0;}
+
+.client-detail{border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;background:var(--panel);margin-top:14px;display:none;}
+.client-detail.show{display:block;}
+.client-detail .kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:12px 0;}
+.client-detail .kv div{font-size:11px;color:var(--muted);}
+.client-detail .kv strong{display:block;font-size:14px;color:var(--ink);font-weight:600;margin-top:2px;}
+
+.foot-note{font-size:11px;color:var(--muted);margin-top:30px;padding-top:16px;border-top:1px solid var(--border);}
+
+@media(max-width:760px){
+  .app{grid-template-columns:1fr;}
+  .sidebar{position:relative;height:auto;flex-direction:row;overflow-x:auto;}
+  .nav{flex-direction:row;overflow-x:auto;}
+  .grp-label{display:none;}
+  main{padding:18px;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="mark">EL</div>
+      <h1>ELAVAGNON 360</h1>
+      <p>Pilotage client augmenté par l'IA</p>
+    </div>
+    <nav class="nav" id="nav">
+      <div class="grp-label">Pilotage</div>
+      <button data-view="overview" class="active">Vue d'ensemble</button>
+      <button data-view="marketing">Marketing</button>
+      <button data-view="commercial">Commercial</button>
+      <button data-view="relation">Relation client</button>
+      <div class="grp-label">Données &amp; IA</div>
+      <button data-view="clients">Clients (200)</button>
+      <button data-view="agents">Agents IA</button>
+    </nav>
+    <div class="sidebar-foot">
+      <span class="roleflag" id="dateRef"></span>
+      <button class="theme-toggle" id="themeToggle">Mode sombre</button>
+    </div>
+  </aside>
+
+  <main id="main"></main>
+</div>
+
+<script id="app-data" type="application/json">{"kpi_globaux":{"nb_clients":200,"ca_total":31945000,"nb_commandes":500,"panier_moyen":63890.0,"satisfaction_moyenne":2.92,"taux_actifs_90j":38.5,"taux_reclamations_non_resolues":75.8},"ca_par_segment":{"Régulier":12675000,"Dormant":7465000,"Explorateur à risque":4950000,"Brand Lover":4615000,"Acheteur Opportuniste":2240000},"clients_par_segment":{"Régulier":53,"Explorateur à risque":50,"Dormant":39,"Acheteur Opportuniste":26,"Prospect / Jamais acheté":18,"Brand Lover":14},"ca_mensuel":{"labels":["2025-01","2025-02","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05","2026-06","2026-07","2026-08","2026-09"],"valeurs":[755000,2230000,2005000,1585000,1480000,920000,1980000,920000,1110000,2560000,1450000,1685000,1445000,1405000,1295000,2385000,2330000,1070000,1915000,845000,575000]},"risque_churn":{"Moyen":89,"Faible":60,"Élevé":51},"top_produits_par_segment":{"Acheteur Opportuniste":[{"produit":"Produit C","ca":645000,"nb_commandes":8},{"produit":"Pack Entreprise","ca":375000,"nb_commandes":9},{"produit":"Service X","ca":375000,"nb_commandes":8}],"Brand Lover":[{"produit":"Service X","ca":1435000,"nb_commandes":18},{"produit":"Pack Entreprise","ca":870000,"nb_commandes":10},{"produit":"Produit C","ca":810000,"nb_commandes":9}],"Dormant":[{"produit":"Pack Entreprise","ca":1815000,"nb_commandes":24},{"produit":"Produit C","ca":1680000,"nb_commandes":23},{"produit":"Produit A","ca":1470000,"nb_commandes":27}],"Explorateur à risque":[{"produit":"Service X","ca":990000,"nb_commandes":11},{"produit":"Pack Premium","ca":885000,"nb_commandes":9},{"produit":"Produit C","ca":875000,"nb_commandes":13}],"Régulier":[{"produit":"Produit B","ca":3530000,"nb_commandes":44},{"produit":"Pack Premium","ca":2515000,"nb_commandes":32},{"produit":"Pack Entreprise","ca":2495000,"nb_commandes":35}]},"performance_canaux":[{"canal_acquisition":"Boutique","nb_clients":34,"satisfaction_moy":2.56,"ca_moyen":156764.71},{"canal_acquisition":"Facebook","nb_clients":38,"satisfaction_moy":3.13,"ca_moyen":129736.84},{"canal_acquisition":"Instagram","nb_clients":26,"satisfaction_moy":3.42,"ca_moyen":148076.92},{"canal_acquisition":"Référence","nb_clients":42,"satisfaction_moy":3.0,"ca_moyen":179642.86},{"canal_acquisition":"Site web","nb_clients":33,"satisfaction_moy":2.6,"ca_moyen":164090.91},{"canal_acquisition":"WhatsApp","nb_clients":27,"satisfaction_moy":2.85,"ca_moyen":180555.56}],"sentiment_avis":{"Positif":119,"Négatif":49,"Neutre":12},"themes_avis":{"Service client":39,"Prix":38,"Livraison":32,"Autre":31,"Qualité produit":19},"opportunites_cross_sell":[{"client_id":"CL011","produits_suggeres":["Produit B","Pack Premium"]},{"client_id":"CL024","produits_suggeres":["Pack Entreprise","Produit B"]},{"client_id":"CL045","produits_suggeres":["Pack Entreprise","Produit B"]},{"client_id":"CL046","produits_suggeres":["Pack Entreprise","Produit B"]},{"client_id":"CL049","produits_suggeres":["Produit B","Pack Premium"]},{"client_id":"CL054","produits_suggeres":["Pack Entreprise","Produit C"]},{"client_id":"CL071","produits_suggeres":["Pack Entreprise","Produit B"]},{"client_id":"CL125","produits_suggeres":["Produit B","Produit C"]},{"client_id":"CL134","produits_suggeres":["Produit A"]},{"client_id":"CL148","produits_suggeres":["Pack Entreprise","Produit C"]},{"client_id":"CL152","produits_suggeres":["Produit B","Produit C"]},{"client_id":"CL174","produits_suggeres":["Produit C","Service X"]},{"client_id":"CL176","produits_suggeres":["Pack Entreprise","Service X"]},{"client_id":"CL187","produits_suggeres":["Service X","Pack Premium"]}],"nb_opportunites_cross_sell":14,"reclamations_prioritaires":[{"reclamation_id":"R034","client_id":"CL006","motif":"Produit indisponible","gravite":"Élevée","resolution":"En cours","segment_ia":"Explorateur à risque"},{"reclamation_id":"R095","client_id":"CL006","motif":"Service client","gravite":"Élevée","resolution":"Non résolue","segment_ia":"Explorateur à risque"},{"reclamation_id":"R013","client_id":"CL170","motif":"Produit indisponible","gravite":"Élevée","resolution":"En cours","segment_ia":"Explorateur à risque"},{"reclamation_id":"R049","client_id":"CL170","motif":"Prix","gravite":"Élevée","resolution":"Non résolue","segment_ia":"Explorateur à risque"},{"reclamation_id":"R037","client_id":"CL196","motif":"Qualité","gravite":"Élevée","resolution":"En cours","segment_ia":"Dormant"},{"reclamation_id":"R092","client_id":"CL067","motif":"Facturation","gravite":"Élevée","resolution":"En cours","segment_ia":"Explorateur à risque"},{"reclamation_id":"R003","client_id":"CL128","motif":"Facturation","gravite":"Élevée","resolution":"Non résolue","segment_ia":"Explorateur à risque"},{"reclamation_id":"R103","client_id":"CL053","motif":"Prix","gravite":"Élevée","resolution":"Non résolue","segment_ia":"Explorateur à risque"},{"reclamation_id":"R082","client_id":"CL200","motif":"Produit indisponible","gravite":"Élevée","resolution":"En cours","segment_ia":"Dormant"},{"reclamation_id":"R055","client_id":"CL166","motif":"Prix","gravite":"Élevée","resolution":"Non résolue","segment_ia":"Dormant"},{"reclamation_id":"R032","client_id":"CL169","motif":"Service client","gravite":"Élevée","resolution":"En cours","segment_ia":"Régulier"},{"reclamation_id":"R090","client_id":"CL133","motif":"Service client","gravite":"Élevée","resolution":"En cours","segment_ia":"Explorateur à risque"},{"reclamation_id":"R106","client_id":"CL116","motif":"Prix","gravite":"Élevée","resolution":"Non résolue","segment_ia":"Régulier"},{"reclamation_id":"R072","client_id":"CL180","motif":"Prix","gravite":"Élevée","resolution":"En cours","segment_ia":"Explorateur à risque"},{"reclamation_id":"R071","client_id":"CL151","motif":"Produit indisponible","gravite":"Élevée","resolution":"En cours","segment_ia":"Explorateur à risque"}],"motifs_reclamations":{"Prix":25,"Produit indisponible":22,"Facturation":20,"Qualité":19,"Livraison":18,"Service client":16},"gravite_reclamations":{"Moyenne":42,"Élevée":42,"Faible":36},"clients_risque_eleve":[{"client_id":"CL006","segment_ia":"Explorateur à risque","risque_churn":91.0,"recence_jours":329.0,"nb_commandes":1.0,"satisfaction":1.0,"ville":"Kpalimé"},{"client_id":"CL170","segment_ia":"Explorateur à risque","risque_churn":83.0,"recence_jours":459.0,"nb_commandes":1.0,"satisfaction":2.0,"ville":"Atakpamé"},{"client_id":"CL136","segment_ia":"Dormant","risque_churn":79.0,"recence_jours":389.0,"nb_commandes":3.0,"satisfaction":0.0,"ville":"Agoè-Nyivé"},{"client_id":"CL182","segment_ia":"Dormant","risque_churn":79.0,"recence_jours":300.0,"nb_commandes":4.0,"satisfaction":0.0,"ville":"Kara"},{"client_id":"CL196","segment_ia":"Dormant","risque_churn":78.0,"recence_jours":473.0,"nb_commandes":3.0,"satisfaction":2.0,"ville":"Tsévié"},{"client_id":"CL072","segment_ia":"Explorateur à risque","risque_churn":76.0,"recence_jours":472.0,"nb_commandes":1.0,"satisfaction":1.0,"ville":"Kpalimé"},{"client_id":"CL080","segment_ia":"Acheteur Opportuniste","risque_churn":74.4,"recence_jours":101.0,"nb_commandes":2.0,"satisfaction":0.0,"ville":"Kara"},{"client_id":"CL165","segment_ia":"Explorateur à risque","risque_churn":74.0,"recence_jours":341.0,"nb_commandes":1.0,"satisfaction":0.0,"ville":"Tsévié"},{"client_id":"CL067","segment_ia":"Explorateur à risque","risque_churn":73.0,"recence_jours":233.0,"nb_commandes":2.0,"satisfaction":2.0,"ville":"Agoè-Nyivé"},{"client_id":"CL069","segment_ia":"Dormant","risque_churn":71.0,"recence_jours":171.0,"nb_commandes":2.0,"satisfaction":1.0,"ville":"Kara"},{"client_id":"CL110","segment_ia":"Explorateur à risque","risque_churn":71.0,"recence_jours":287.0,"nb_commandes":2.0,"satisfaction":1.0,"ville":"Lomé"},{"client_id":"CL073","segment_ia":"Acheteur Opportuniste","risque_churn":70.7,"recence_jours":145.0,"nb_commandes":1.0,"satisfaction":1.6666666666666667,"ville":"Tsévié"},{"client_id":"CL128","segment_ia":"Explorateur à risque","risque_churn":70.0,"recence_jours":463.0,"nb_commandes":1.0,"satisfaction":4.0,"ville":"Tsévié"},{"client_id":"CL061","segment_ia":"Dormant","risque_churn":70.0,"recence_jours":156.0,"nb_commandes":3.0,"satisfaction":5.0,"ville":"Lomé"},{"client_id":"CL020","segment_ia":"Explorateur à risque","risque_churn":70.0,"recence_jours":327.0,"nb_commandes":1.0,"satisfaction":4.0,"ville":"Atakpamé"},{"client_id":"CL068","segment_ia":"Explorateur à risque","risque_churn":70.0,"recence_jours":452.0,"nb_commandes":1.0,"satisfaction":4.0,"ville":"Lomé"},{"client_id":"CL070","segment_ia":"Régulier","risque_churn":69.2,"recence_jours":108.0,"nb_commandes":3.0,"satisfaction":1.0,"ville":"Tsévié"},{"client_id":"CL064","segment_ia":"Dormant","risque_churn":69.0,"recence_jours":174.0,"nb_commandes":2.0,"satisfaction":0.0,"ville":"Kpalimé"},{"client_id":"CL089","segment_ia":"Dormant","risque_churn":69.0,"recence_jours":251.0,"nb_commandes":3.0,"satisfaction":0.0,"ville":"Agoè-Nyivé"},{"client_id":"CL139","segment_ia":"Dormant","risque_churn":69.0,"recence_jours":253.0,"nb_commandes":3.0,"satisfaction":0.0,"ville":"Kara"}],"clients_table":[{"client_id":"CL001","age":42,"sexe":"F","ville":"Kara","segment":"Premium","segment_ia":"Acheteur Opportuniste","canal_acquisition":"Référence","nb_commandes":1.0,"montant_total":5000,"recence_jours":93.0,"satisfaction":5.0,"risque_churn":42.2,"niveau_risque":"Moyen","produit_favori":"Pack Premium"},{"client_id":"CL002","age":47,"sexe":"M","ville":"Lomé","segment":"Régulier","segment_ia":"Régulier","canal_acquisition":"WhatsApp","nb_commandes":4.0,"montant_total":220000,"recence_jours":52.0,"satisfaction":2.0,"risque_churn":28.8,"niveau_risque":"Faible","produit_favori":"Produit B"},{"client_id":"CL003","age":47,"sexe":"","ville":"Kpalimé","segment":"Dormant","segment_ia":"Explorateur à risque","canal_acquisition":"Facebook","nb_commandes":2.0,"montant_total":65000,"recence_jours":568.0,"satisfaction":3.0,"risque_churn":45.0,"niveau_risque":"Moyen","produit_favori":"Pack Entreprise"},{"client_id":"CL004","age":27,"sexe":"F","ville":"Kpalimé","segment":"Dormant","segment_ia":"Régulier","canal_acquisition":"WhatsApp","nb_commandes":5.0,"montant_total":395000,"recence_jours":106.0,"satisfaction":1.0,"risque_churn":58.4,"niveau_risque":"Moyen","produit_favori":"Pack Premium"},{"client_id":"CL005","age":31,"sexe":"F","ville":"Tsévié","segment":"Premium","segment_ia":"Acheteur Opportuniste","canal_acquisition":"Référence","nb_commandes":2.0,"montant_total":20000,"recence_jours":102.0,"satisfaction":2.0,"risque_churn":48.8,"niveau_risque":"Moyen","produit_favori":"Service X"},{"client_id":"CL006","age":24,"sexe":"F","ville":"Kpalimé","segment":"Dormant","segment_ia":"Explorateur à risque","canal_acquisition":"WhatsApp","nb_commandes":1.0,"montant_total":250000,"recence_jours":329.0,"satisfaction":1.0,"risque_churn":91.0,"niveau_risque":"Élevé","produit_favori":"Pack Entreprise"},{"client_id":"CL007","age":35,"sexe":"","ville":"Kpalimé","segment":"Nouveau","segment_ia":"Régulier","canal_acquisition":"Instagram","nb_commandes":4.0,"montant_total":150000,"recence_jours":4.0,"satisfaction":2.0,"risque_churn":9.6,"niveau_risque":"Faible","produit_favori":"Pack Entreprise"},{"client_id":"CL008","age":35,"sexe":"M","ville":"Atakpamé","segment":"Premium","segment_ia":"Régulier","canal_acquisition":"Facebook","nb_commandes":5.0,"montant_total":200000,"recence_jours":43.0,"satisfaction":1.0,"risque_churn":53.2,"niveau_risque":"Moyen","produit_favori":"Pack Premium"},{"client_id":"CL009","age":29,"sexe":"","ville":"Kara","segment":"Régulier","segment_ia":"Régulier","canal_acquisition":"Boutique","nb_commandes":3.0,"montant_total":225000,"recence_jours":86.0,"satisfaction":2.0,"risque_churn":42.4,"niveau_risque":"Moyen","produit_favori":"Pack Entreprise"},{"client_id":"CL010","age":27,"sexe":"M","ville":"Lomé","segment":"Régulier","segment_ia":"Acheteur Opportuniste","canal_acquisition":"Facebook","nb_commandes":2.0,"montant_total":85000,"recence_jours":0.0,"satisfaction":1.0,"risque_churn":26.0,"niveau_risque":"Faible","produit_favori":"Service X"},{"client_id":"CL011","age":31,"sexe":"M","ville":"Tsévié","segment":"Premium","segment_ia":"Brand Lover","canal_acquisition":"Référence","nb_commandes":5.0,"montant_total":440000,"recence_jours":115.0,"satisfaction":5.0,"risque_churn":45.0,"niveau_risque":"Moyen","produit_favori":"Pack Entreprise"},{"client_id":"CL012","age":22,"sexe":"F","ville":"Agoè-Nyivé","segment":"Premium","segment_ia":"Régulier","canal_acquisition":"Référence","nb_commandes":4.0,"montant_total":145000,"recence_jours":3.0,"satisfaction":2.0,"risque_churn":9.2,"niveau_risque":"Faible","produit_favori":"Pack Entreprise"},{"client_id":"CL013","age":38,"sexe":"","ville":"Atakpamé","segment":"Premium","segment_ia":"Explorateur à risque","canal_acquisition":"WhatsApp","nb_commandes":2.0,"montant_total":260000,"recence_jours":209.0,"satisfaction":3.0,"risque_churn":45.0,"niveau_risque":"Moyen","produit_favori":"Pack Premium"},{"client_id":"CL014","age":22,"sexe":"F","ville":"Lomé","segment":"Dormant","segment_ia":"Prospect / Jamais acheté","canal_acquisition":"Facebook","nb_commandes":0.0,"montant_total":0,"recence_jours":0.0,"satisfaction":5.0,"risque_churn":5.0,"niveau_risque":"Faible","produit_favori":""},{"client_id":"CL015","age":27,"sexe":"M","ville":"Kpalimé","segment":"Régulier","segment_ia":"Régulier","canal_acquisition":"Site web","nb_commandes":3.0,"montant_total":160000,"recence_jours":3.0,"satisfaction":3.0,"risque_churn":11.2,"niveau_risque":"Faible","produit_favori":"Service X"},{"client_id":"CL016","age":55,"sexe":"M","ville":"Atakpamé","segment":"Nouveau","segment_ia":"Acheteur Opportuniste","canal_acquisition":"Site web","nb_commandes":2.0,"montant_total":10000,"recence_jours":127.0,"satisfaction":4.0,"risque_churn":65.0,"niveau_risque":"Élevé","produit_favori":"Pack Entreprise"},{"client_id":"CL017","age":24,"sexe":"M","ville":"Atakpamé","segment":"Nouveau","segment_ia":"Régulier","canal_acquisition":"Instagram","nb_commandes":3.0,"montant_total":110000,"recence_jours":7.0,"satisfaction":5.0,"risque_churn":22.8,"niveau_risque":"Faible","produit_favori":"Service X"},{"client_id":"CL018","age":29,"sexe":"F","ville":"Kara","segment":"Dormant","segment_ia":"Explorateur à risque","canal_acquisition":"WhatsApp","nb_commandes":1.0,"montant_total":50000,"recence_jours":214.0,"satisfaction":3.0,"risque_churn":50.0,"niveau_risque":"Moyen","produit_favori":"Service X"},{"client_id":"CL019","age":27,"sexe":"M","ville":"Tsévié","segment":"Dormant","segment_ia":"Régulier","canal_acquisition":"Boutique","nb_commandes":4.0,"montant_total":455000,"recence_jours":26.0,"satisfaction":1.0,"risque_churn":26.4,"niveau_risque":"Faible","produit_favori":"Pack Entreprise"},{"client_id":"CL020","age":42,"sexe":"F","ville":"Atakpamé","segment":"Premium","segment_ia":"Explorateur à risque","canal_acquisition":"WhatsApp","nb_commandes":1.0,"montant_total":35000,"recence_jours":327.0,"satisfaction":4.0,"risque_churn":70.0,"niveau_risque":"Élevé","produit_favori":"Produit C"},{"client_id":"CL021","age":22,"sexe":"F","ville":"Tsévié","segment":"Premium","segment_ia":"Régulier","canal_acquisition":"WhatsApp","nb_commandes":3.0,"montant_total":200000,"recence_jours":76.0,"satisfaction":4.0,"risque_churn":30.4,"niveau_risque":"Faible","produit_favori":"Produit B"},{"client_id":"CL022","age":55,"sexe":"F","ville":"Agoè-Nyivé","segment":"Régulier","segment_ia":"Explorateur à risque","canal_acquisition":"Boutique","nb_commandes":2.0,"montant_total":115000,"recence_jours":203.0,"satisfaction":1.0,"risque_churn":61.0,"niveau_risque":"Élevé","produit_favori":"Pack Entreprise"},{"client_id":"CL023","age":47,"sexe":"M","ville":"Kpalimé","segment":"Premium","segment_ia":"Dormant","canal_acquisition":"Site web","nb_commandes":3.0,"montant_total":190000,"recence_jours":175.0,"satisfaction":2.0,"risque_churn":53.0,"niveau_risque":"Moyen","produit_favori":"Service X"},{"client_id":"CL024","age":19,"sexe":"M","ville":"Tsévié","segment":"Premium","segment_ia":"Brand Lover","canal_acquisition":"Référence","nb_commandes":4.0,"montant_total":165000,"recence_jours":132.0,"satisfaction":4.0,"risque_churn":45.0,"niveau_risque":"Moyen","produit_favori":"Service X"},{"client_id":"CL025","age":19,"sexe":"","ville":"Kpalimé","segment":"Régulier","segment_ia":"Prospect / Jamais acheté","canal_acquisition":"WhatsApp","nb_commandes":0.0,"montant_total":0,"recence_jours":0.0,"satisfaction":0.0,"risque_churn":39.0,"niveau_risque":"Moyen","produit_favori":""},{"client_id":"CL026","age":42,"sexe":"M","ville":"Kpalimé","segment":"Premium","segment_ia":"Explorateur à risque","canal_acquisition":"Boutique","nb_commandes":1.0,"montant_total":75000,"recence_jours":350.0,"satisfaction":2.0,"risque_churn":58.0,"niveau_risque":"Moyen","produit_favori":"Service X"},{"client_id":"CL027","age":55,"sexe":"","ville":"Agoè-Nyivé","segment":"Premium","segment_ia":"Dormant","canal_acquisition":"Facebook","nb_commandes":3.0,"montant_total":140000,"recence_jours":323.0,"satisfaction":2.0,"risque_churn":53.0,"niveau_risque":"Moyen","produit_favori":"Produit C"},{"client_id":"CL028","age":29,"sexe":"","ville":"Agoè-Nyivé","segment":"Premium","segment_ia":"Explorateur à risque","canal_acquisition":"Site web","nb_commandes":1.0,"montant_total":25000,"recence_jours":592.0,"satisfaction":2.0,"risque_churn":58.0,"niveau_risque":"Moyen","produit_favori":"Produit C"},{"client_id":"CL029","age":31,"sexe":"M","ville":"Kpalimé","segment":"Premium","segment_ia":"Régulier","canal_acquisition":"Référence","nb_commandes":6.0,"montant_total":185000,"recence_jours":17.0,"satisfaction":3.0,"risque_churn":16.8,"niveau_risque":"Faible","produit_favori":"Pack Premium"},{"client_id":"CL030","age":29,"sexe":"","ville":"Tsévié","segment":"Dormant","segment_ia":"Acheteur Opportuniste","canal_acquisition":"Facebook","nb_commandes":2.0,"montant_total":85000,"recence_jours":5.0,"satisfaction":1.0,"risque_churn":28.0,"niveau_risque":"Faible","produit_favori":"Pack Entreprise"},{"client_id":"CL031","age":55,"sexe":"","ville":"Atakpamé","segment":"Nouveau","segment_ia":"Explorateur à risque","canal_acquisition":"Référence","nb_commandes":2.0,"montant_total":135000,"recence_jours":352.0,"satisfaction":5.0,"risque_churn":45.0,"niveau_risque":"Moyen","produit_favori":"Service X"},{"client_id":"CL032","age":22,"sexe":"M","ville":"Atakpamé","segment":"Premium","segment_ia":"Explorateur à risque","canal_acquisition":"Référence","nb_commandes":1.0,"montant_total":25000,"recence_jours":357.0,"satisfaction":2.0,"risque_churn":58.0,"niveau_risque":"Moyen","produit_favori":"Pack Premium"},{"client_id":"CL033","age":24,"sexe":"M","ville":"Tsévié","segment":"Dormant","segment_ia":"Régulier","canal_acquisition":"Boutique","nb_commandes":4.0,"montant_total":370000,"recence_jours":112.0,"satisfaction":2.0,"risque_churn":52.8,"niveau_risque":"Moyen","produit_favori":"Service X"},{"client_id":"CL034","age":31,"sexe":"M","ville":"Lomé","segment":"Dormant","segment_ia":"Régulier","canal_acquisition":"WhatsApp","nb_commandes":4.0,"montant_total":155000,"recence_jours":35.0,"satisfaction":3.0,"risque_churn":14.0,"niveau_risque":"Faible","produit_favori":"Produit A"},{"client_id":"CL035","age":55,"sexe":"F","ville":"Lomé","segment":"Dormant","segment_ia":"Dormant","canal_acquisition":"WhatsApp","nb_commandes":3.0,"montant_total":190000,"recence_jours":209.0,"satisfaction":2.0,"risque_churn":63.0,"niveau_risque":"Élevé","produit_favori":"Service X"},{"client_id":"CL036","age":47,"sexe":"M","ville":"Kara","segment":"Nouveau","segment_ia":"Régulier","canal_acquisition":"Instagram","nb_commandes":4.0,"montant_total":50000,"recence_jours":10.0,"satisfaction":1.0,"risque_churn":20.0,"niveau_risque":"Faible","produit_favori":"Produit A"},{"client_id":"CL037","age":35,"sexe":"M","ville":"Kara","segment":"Dormant","segment_ia":"Régulier","canal_acquisition":"Référence","nb_commandes":6.0,"montant_total":160000,"recence_jours":58.0,"satisfaction":1.0,"risque_churn":39.2,"niveau_risque":"Moyen","produit_favori":"Pack Entreprise"},{"client_id":"CL038","age":42,"sexe":"M","ville":"Kpalimé","segment":"Premium","segment_ia":"Régulier","canal_acquisition":"Facebook","nb_commandes":3.0,"montant_total":190000,"recence_jours":2.0,"satisfaction":5.0,"risque_churn":20.8,"niveau_risque":"Faible","produit_favori":"Produit C"},{"client_id":"CL039","age":27,"sexe":"F","ville":"Kpalimé","segment":"Nouveau","segment_ia":"Dormant","canal_acquisition":"Site web","nb_commandes":4.0,"montant_total":70000,"recence_jours":402.0,"satisfaction":2.0,"risque_churn":53.0,"niveau_risque":"Moyen","produit_favori":"Pack Entreprise"},{"client_id":"CL040","age":31,"sexe":"F","ville":"Agoè-Nyivé","segment":"Nouveau","segment_ia":"Régulier","canal_acquisition":"Référence","nb_commandes":3.0,"montant_total":160000,"recence_jours":140.0,"satisfaction":2.0,"risque_churn":53.0,"niveau_risque":"Moyen","produit_favori":"Produit C"},{"client_id":"CL041","age":22,"sexe":"F","ville":"Tsévié","segment":"Premium","segment_ia":"Prospect / Jamais acheté","canal_acquisition":"Référence","nb_commandes":0.0,"montant_total":0,"recence_jours":0.0,"satisfaction":4.0,"risque_churn":5.0,"niveau_risque":"Faible","produit_favori":""},{"client_id":"CL042","age":55,"sexe":"M","ville":"Tsévié","segment":"Dormant","segment_ia":"Dormant","canal_acquisition":"WhatsApp","nb_commandes":6.0,"montant_total":650000,"recence_jours":260.0,"satisfaction":2.0,"risque_churn":53.0,"niveau_risque":"Moyen","produit_favori":"Produit C"},{"client_id":"CL043","age":35,"sexe":"F","ville":"Agoè-Nyivé","segment":"Régulier","segment_ia":"Dormant","canal_acquisition":"Site web","nb_commandes":2.0,"montant_total":255000,"recence_jours":162.0,"satisfaction":2.0,"risque_churn":53.0,"niveau_risque":"Moyen","produit_favori":"Produit B"},{"client_id":"CL044","age":19,"sexe":"","ville":"Atakpamé","segment":"Régulier","segment_ia":"Acheteur Opportuniste","canal_acquisition":"Facebook","nb_commandes":1.0,"montant_total":25000,"recence_jours":61.0,"satisfaction":4.0,"risque_churn":39.4,"niveau_risque":"Moyen","produit_favori":"Produit A"},{"client_id":"CL045","age":55,"sexe":"F","ville":"Kara","segment":"Premium","segment_ia":"Brand Lover","canal_acquisition":"Boutique","nb_commandes":5.0,"montant_total":560000,"recence_jours":112.0,"satisfaction":5.0,"risque_churn":44.8,"niveau_risque":"Moyen","produit_favori":"Service X"},{"client_id":"CL046","age":19,"sexe":"F","ville":"Kpalimé","segment":"Nouveau","segment_ia":"Brand Lover","canal_acquisition":"Facebook","nb_commandes":5.0,"montant_total":195000,"recence_jours":145.0,"satisfaction":4.0,"risque_churn":55.0,"niveau_risque":"Moyen","produit_favori":"Service X"},{"client_id":"CL047","age":38,"sexe":"M","ville":"Lomé","segment":"Premium","segment_ia":"Acheteur Opportuniste","canal_acquisition":"Référence","nb_commandes":2.0,"montant_total":15000,"recence_jours":71.0,"satisfaction":2.0,"risque_churn":36.4,"niveau_risque":"Moyen","produit_favori":"Produit C"},{"client_id":"CL048","age":55,"sexe":"F","ville":"Tsévié","segment":"Dormant","segment_ia":"Explorateur à risque","canal_acquisition":"Site web","nb_commandes":1.0,"montant_total":50000,"recence_jours":286.0,"satisfaction":1.0,"risque_churn":66.0,"niveau_risque":"Élevé","produit_favori":"Produit B"},{"client_id":"CL049","age":42,"sexe":"F","ville":"Atakpamé","segment":"Régulier","segment_ia":"Brand Lover","canal_acquisition":"Référence","nb_commandes":5.0,"montant_total":830000,"recence_jours":39.0,"satisfaction":5.0,"risque_churn":15.6,"niveau_risque":"Faible","produit_favori":"Produit A"},{"client_id":"CL050","age":47,"sexe":"F","ville":"Tsévié","segment":"Nouveau","segment_ia":"Explorateur à risque","canal_acquisition":"Facebook","nb_commandes":2.0,"montant_total":150000,"recence_jours":491.0,"satisfaction":2.0,"risque_churn":63.0,"niveau_risque":"Élevé","produit_favori":"Pack Entreprise"},{"client_id":"CL051","age":47,"sexe":"M","ville":"Tsévié","segment":"Régulier","segment_ia":"Acheteur Opportuniste","canal_acquisition":"WhatsApp","nb_commandes":2.0,"montant_total":15000,"recence_jours":99.0,"satisfaction":3.0,"risque_churn":39.6,"niveau_risque":"Moyen","produit_favori":"Produit A"},{"client_id":"CL052","age":24,"sexe":"F","ville":"Atakpamé","segment":"Dormant","segment_ia":"Dormant","canal_acquisition":"Instagram","nb_commandes":4.0,"montant_total":270000,"recence_jours":229.0,"satisfaction":3.0,"risque_churn":45.0,"niveau_risque":"Moyen","produit_favori":"Produit B"},{"client_id":"CL053","age":27,"sexe":"F","ville":"Lomé","segment":"Nouveau","segment_ia":"Explorateur à risque","canal_acquisition":"Facebook","nb_commandes":1.0,"montant_total":25000,"recence_jours":470.0,"satisfaction":2.0,"risque_churn":68.0,"niveau_risque":"Élevé","produit_favori":"Pack Entreprise"},{"client_id":"CL054","age":22,"sexe":"","ville":"Lomé","segment":"Nouveau","segment_ia":"Brand Lover","canal_acquisition":"WhatsApp","nb_commandes":4.0,"montant_total":70000,"recence_jours":20.0,"satisfaction":4.0,"risque_churn":18.0,"niveau_risque":"Faible","produit_favori":"Pack Premium"},{"client_id":"CL055","age":29,"sexe":"F","ville":"Kara","segment":"Nouveau","segment_ia":"Prospect / Jamais acheté","canal_acquisition":"Facebook","nb_commandes":0.0,"montant_total":0,"recence_jours":0.0,"satisfaction":1.0,"risque_churn":41.0,"niveau_risque":"Moyen","produit_favori":""},{"client_id":"CL056","age":29,"sexe":"F","ville":"Kpalimé","segment":"Premium","segment_ia":"Explorateur à risque","canal_acquisition":"Référence","nb_commandes":1.0,"montant_total":15000,"recence_jours":469.0,"satisfaction":1.0,"risque_churn":66.0,"niveau_risque":"Élevé","produit_favori":"Pack Entreprise"},{"client_id":"CL057","age":19,"sexe":"F","ville":"Agoè-Nyivé","segment":"Régulier","segment_ia":"Dormant","canal_acquisition":"WhatsApp","nb_commandes":3.0,"montant_total":50000,"recence_jours":327.0,"satisfaction":4.0,"risque_churn":45.0,"niveau_risque":"Moyen","produit_favori":"Produit B"},{"client_id":"CL058","age":47,"sexe":"F","ville":"Kpalimé","segment":"Nouveau","segment_ia":"Explorateur à risque","canal_acquisition":"WhatsApp","nb_commandes":1.0,"montant_total":10000,"recence_jours":608.0,"satisfaction":2.0,"risque_churn":68.0,"niveau_risque":"Élevé","produit_favori":"Pack Premium"},{"client_id":"CL059","age":22,"sexe":"M","ville":"Kara","segment":"Dormant","segment_ia":"Explorateur à risque","canal_acquisition":"WhatsApp","nb_commandes":1.0,"montant_total":100000,"recence_jours":358.0,"satisfaction":2.0,"risque_churn":58.0,"niveau_risque":"Moyen","produit_favori":"Service X"},{"client_id":"CL060","age":38,"sexe":"M","ville":"Kpalimé","segment":"Régulier","segment_ia":"Prospect / Jamais acheté","canal_acquisition":"Facebook","nb_commandes":0.0,"montant_total":0,"recence_jours":0.0,"satisfaction":3.0,"risque_churn":5.0,"niveau_risque":"Faible","produit_favori":""},{"client_id":"CL061","age":19,"sexe":"M","ville":"Lomé","segment":"Dormant","segment_ia":"Dormant","canal_acquisition":"Boutique","nb_commandes":3.0,"montant_total":90000,"recence_jours":156.0,"satisfaction":5.0,"risque_churn":70.0,"niveau_risque":"Élevé","produit_favori":"Produit C"},{"client_id":"CL062","age":55,"sexe":"M","ville":"Agoè-Nyivé","segment":"Dormant","segment_ia":"Explorateur à risque","canal_acquisition":"WhatsApp","nb_commandes":2.0,"montant_total":115000,"recence_jours":362.0,"satisfaction":3.0,"risque_churn":45.0,"niveau_risque":"Moyen","produit_favori":"Pack Entreprise"},{"client_id":"CL063","age":24,"sexe":"M","ville":"Kara","segment":"Nouveau","segment_ia":"Acheteur Opportuniste","canal_acquisition":"Référence","nb_commandes":2.0,"montant_total":255000,"recence_jours":51.0,"satisfaction":1.0,"risque_churn":36.4,"niveau_risque":"Moyen","produit_favori":"Produit C"},{"client_id":"CL064","age":22,"sexe":"F","ville":"Kpalimé","segment":"Premium","segment_ia":"Dormant","canal_acquisition":"Facebook","nb_commandes":2.0,"montant_total":100000,"recence_jours":174.0,"satisfaction":0.0,"risque_churn":69.0,"niveau_risque":"Élevé","produit_favori":"Pack Premium"},{"client_id":"CL065","age":31,"sexe":"","ville":"Atakpamé","segment":"Nouveau","segment_ia":"Dormant","canal_acquisition":"Référence","nb_commandes":3.0,"montant_total":115000,"recence_jours":269.0,"satisfaction":4.0,"risque_churn":45.0,"niveau_risque":"Moyen","produit_favori":"Produit A"},{"client_id":"CL066","age":31,"sexe":"M","ville":"Agoè-Nyivé","segment":"Nouveau","segment_ia":"Explorateur à risque","canal_acquisition":"Facebook","nb_commandes":1.0,"montant_total":250000,"recence_jours":542.0,"satisfaction":5.0,"risque_churn":60.0,"niveau_risque":"Élevé","produit_favori":"Produit C"},{"client_id":"CL067","age":38,"sexe":"M","ville":"Agoè-Nyivé","segment":"Nouveau","segment_ia":"Explorateur à risque","canal_acquisition":"Référence","nb_commandes":2.0,"montant_total":265000,"recence_jours":233.0,"satisfaction":2.0,"risque_churn":73.0,"niveau_risque":"Élevé","produit_favori":"Pack Entreprise"},{"client_id":"CL068","age":31,"sexe":"F","ville":"Lomé","segment":"Régulier","segment_ia":"Explorateur à risque","canal_acquisition":"Boutique","nb_commandes":1.0,"montant_total":35000,"recence_jours":452.0,"satisfaction":4.0,"risque_churn":70.0,"niveau_risque":"Élevé","produit_favori":"Produit A"},{"client_id":"CL069","age":27,"sexe":"F","ville":"Kara","segment":"Dormant","segment_ia":"Dormant","canal_acquisition":"Boutique","nb_commandes":2.0,"montant_total":60000,"recence_jours":171.0,"satisfaction":1.0,"risque_churn":71.0,"niveau_risque":"Élevé","produit_favori":"Produit C"},{"client_id":"CL070","age":38,"sexe":"M","ville":"Tsévié","segment":"Nouveau","segment_ia":"Régulier","canal_acquisition":"Référence","nb_commandes":3.0,"montant_total":280000,"recence_jours":108.0,"satisfaction":1.0,"risque_churn":69.2,"niveau_risque":"Élevé","produit_favori":"Produit C"},{"client_id":"CL071","age":35,"sexe":"M","ville":"Lomé","segment":"Nouveau","segment_ia":"Brand Lover","canal_acquisition":"Facebook","nb_commandes":4.0,"montant_total":175000,"recence_jours":13.0,"satisfaction":5.0,"risque_churn":5.2,"niveau_risque":"Faible","produit_favori":"Service X"},{"client_id":"CL072","age":42,"sexe":"M","ville":"Kpalimé","segment":"Dormant","segment_ia":"Explorateur à risque","canal_acquisition":"WhatsApp","nb_commandes":1.0,"montant_total":100000,"recence_jours":472.0,"satisfaction":1.0,"risque_churn":76.0,"niveau_risque":"Élevé","produit_favori":"Produit A"},{"client_id":"CL073","age":27,"sexe":"M","ville":"Tsévié","segment":"Dormant","segment_ia":"Acheteur Opportuniste","canal_acquisition":"Site web","nb_commandes":1.0,"montant_total":15000,"recence_jours":145.0,"satisfaction":1.7,"risque_churn":70.7,"niveau_risque":"Élevé","produit_favori":"Produit B"},{"client_id":"CL074","age":38,"sexe":"F","ville":"Lomé","segment":"Régulier","segment_ia":"Régulier","canal_acquisition":"Facebook","nb_commandes":3.0,"montant_total":385000,"recence_jours":115.0,"satisfaction":3.0,"risque_churn":45.0,"niveau_risque":"Moyen","produit_favori":"Produit C"},{"client_id":"CL075","age":55,"sexe":"F","ville":"Atakpamé","segment":"Premium","segment_ia":"Régulier","canal_acquisition":"Site web","nb_commandes":5.0,"montant_total":495000,"recence_jours":0.0,"satisfaction":1.0,"risque_churn":16.0,"niveau_risque":"Faible","produit_favori":"Produit B"},{"client_id":"CL076","age":24,"sexe":"M","ville":"Agoè-Nyivé","segment":"Dormant","segment_ia":"Acheteur Opportuniste","canal_acquisition":"Facebook","nb_commandes":2.0,"montant_total":125000,"recence_jours":56.0,"satisfaction":5.0,"risque_churn":22.4,"niveau_risque":"Faible","produit_favori":"Service X"},{"client_id":"CL077","age":27,"sexe":"M","ville":"Lomé","segment":"Dormant","segment_ia":"Explorateur à risque","canal_acquisition":"Instagram","nb_commandes":1.0,"montant_total":25000,"recence_jours":517.0,"satisfaction":2.0,"risque_churn":58.0,"niveau_risque":"Moyen","produit_favori":"Pack Entreprise"},{"client_id":"CL078","age":31,"sexe":"F","ville":"Kara","segment":"Nouveau","segment_ia":"Régulier","canal_acquisition":"Site web","nb_commandes":3.0,"montant_total":330000,"recence_jours":12.0,"satisfaction":4.0,"risque_churn":4.8,"niveau_risque":"Faible","produit_favori":"Produit C"},{"client_id":"CL079","age":38,"sexe":"","ville":"Atakpamé","segment":"Régulier","segment_ia":"Explorateur à risque","canal_acquisition":"Référence","nb_commandes":2.0,"montant_total":115000,"recence_jours":436.0,"satisfaction":5.0,"risque_churn":45.0,"niveau_risque":"Moyen","produit_favori":"Produit C"},{"client_id":"CL080","age":19,"sexe":"","ville":"Kara","segment":"Dormant","segment_ia":"Acheteur Opportuniste","canal_acquisition":"Boutique","nb_commandes":2.0,"montant_total":20000,"recence_jours":101.0,"satisfaction":0.0,"risque_churn":74.4,"niveau_risque":"Élevé","produit_favori":"Produit C"},{"client_id":"CL081","age":47,"sexe":"M","ville":"Kpalimé","segment":"Régulier","segment_ia":"Prospect / Jamais acheté","canal_acquisition":"Facebook","nb_commandes":0.0,"montant_total":0,"recence_jours":0.0,"satisfaction":5.0,"risque_churn":5.0,"niveau_risque":"Faible","produit_favori":""},{"client_id":"CL082","age":47,"sexe":"","ville":"Tsévié","segment":"Dormant","segment_ia":"Régulier","canal_acquisition":"Référence","nb_commandes":3.0,"montant_total":95000,"recence_jours":139.0,"satisfaction":3.0,"risque_churn":45.0,"niveau_risque":"Moyen","produit_favori":"Service X"},{"client_id":"CL083","age":35,"sexe":"F","ville":"Tsévié","segment":"Dormant","segment_ia":"Explorateur à risque","canal_acquisition":"Instagram","nb_commandes":2.0,"montant_total":285000,"recence_jours":288.0,"satisfaction":4.0,"risque_churn":55.0,"niveau_risque":"Moyen","produit_favori":"Service X"},{"client_id":"CL084","age":47,"sexe":"","ville":"Tsévié","segment":"Premium","segment_ia":"Régulier","canal_acquisition":"Site web","nb_commandes":3.0,"montant_total":275000,"recence_jours":97.0,"satisfaction":2.0,"risque_churn":46.8,"niveau_risque":"Moyen","produit_favori":"Service X"},{"client_id":"CL085","age":27,"sexe":"","ville":"Kpalimé","segment":"Premium","segment_ia":"Acheteur Opportuniste","canal_acquisition":"Site web","nb_commandes":2.0,"montant_total":60000,"recence_jours":72.0,"satisfaction":1.0,"risque_churn":44.8,"niveau_risque":"Moyen","produit_favori":"Produit B"},{"client_id":"CL086","age":24,"sexe":"M","ville":"Atakpamé","segment":"Premium","segment_ia":"Explorateur à risque","canal_acquisition":"Site web","nb_commandes":1.0,"montant_total":15000,"recence_jours":547.0,"satisfaction":3.0,"risque_churn":60.0,"niveau_risque":"Élevé","produit_favori":"Produit A"},{"client_id":"CL087","age":42,"sexe":"M","ville":"Atakpamé","segment":"Dormant","segment_ia":"Dormant","canal_acquisition":"Site web","nb_commandes":4.0,"montant_total":370000,"recence_jours":200.0,"satisfaction":4.0,"risque_churn":55.0,"niveau_risque":"Moyen","produit_favori":"Service X"},{"client_id":"CL088","age":19,"sexe":"","ville":"Lomé","segment":"Nouveau","segment_ia":"Régulier","canal_acquisition":"Référence","nb_commandes":3.0,"montant_total":50000,"recence_jours":116.0,"satisfaction":1.0,"risque_churn":61.0,"niveau_risque":"Élevé","produit_favori":"Service X"},{"client_id":"CL089","age":55,"sexe":"F","ville":"Agoè-Nyivé","segment":"Premium","segment_ia":"Dormant","canal_acquisition":"Instagram","nb_commandes":3.0,"montant_total":325000,"recence_jours":251.0,"satisfaction":0.0,"risque_churn":69.0,"niveau_risque":"Élevé","produit_favori":"Produit C"},{"client_id":"CL090","age":29,"sexe":"M","ville":"Lomé","segment":"Premium","segment_ia":"Explorateur à risque","canal_acquisition":"Instagram","nb_commandes":1.0,"montant_total":25000,"recence_jours":183.0,"satisfaction":3.0,"risque_churn":50.0,"niveau_risque":"Moyen","produit_favori":"Produit A"},{"client_id":"CL091","age":38,"sexe":"F","ville":"Atakpamé","segment":"Régulier","segment_ia":"Dormant","canal_acquisition":"Site web","nb_commandes":4.0,"montant_total":85000,"recence_jours":289.0,"satisfaction":2.0,"risque_churn":63.0,"niveau_risque":"Élevé","produit_favori":"Produit B"},{"client_id":"CL092","age":42,"sexe":"F","ville":"Kpalimé","segment":"Nouveau","segment_ia":"Explorateur à risque","canal_acquisition":"Référence","nb_commandes":1.0,"montant_total":10000,"recence_jours":454.0,"satisfaction":4.0,"risque_churn":50.0,"niveau_risque":"Moyen","produit_favori":"Service X"},{"client_id":"CL093","age":55,"sexe":"F","ville":"Atakpamé","segment":"Nouveau","segment_ia":"Explorateur à risque","canal_acquisition":"Facebook","nb_commandes":2.0,"montant_total":50000,"recence_jours":184.0,"satisfaction":2.0,"risque_churn":53.0,"niveau_risque":"Moyen","produit_favori":"Produit B"},{"client_id":"CL094","age":47,"sexe":"M","ville":"Agoè-Nyivé","segment":"Premium","segment_ia":"Régulier","canal_acquisition":"Boutique","nb_commandes":3.0,"montant_total":80000,"recence_jours":15.0,"satisfaction":0.0,"risque_churn":50.0,"niveau_risque":"Moyen","produit_favori":"Produit B"},{"client_id":"CL095","age":27,"sexe":"F","ville":"Kara","segment":"Régulier","segment_ia":"Régulier","canal_acquisition":"Site web","nb_commandes":3.0,"montant_total":295000,"recence_jours":136.0,"satisfaction":2.0,"risque_churn":63.0,"niveau_risque":"Élevé","produit_favori":"Service X"},{"client_id":"CL096","age":24,"sexe":"","ville":"Lomé","segment":"Dormant","segment_ia":"Régulier","canal_acquisition":"Facebook","nb_commandes":7.0,"montant_total":745000,"recence_jours":87.0,"satisfaction":3.0,"risque_churn":34.8,"niveau_risque":"Faible","produit_favori":"Pack Premium"},{"client_id":"CL097","age":42,"sexe":"F","ville":"Agoè-Nyivé","segment":"Régulier","segment_ia":"Acheteur Opportuniste","canal_acquisition":"Boutique","nb_commandes":1.0,"montant_total":15000,"recence_jours":32.0,"satisfaction":1.0,"risque_churn":33.8,"niveau_risque":"Faible","produit_favori":"Produit B"},{"client_id":"CL098","age":31,"sexe":"M","ville":"Kpalimé","segment":"Régulier","segment_ia":"Régulier","canal_acquisition":"Facebook","nb_commandes":4.0,"montant_total":80000,"recence_jours":91.0,"satisfaction":3.0,"risque_churn":36.4,"niveau_risque":"Moyen","produit_favori":"Pack Entreprise"},{"client_id":"CL099","age":47,"sexe":"F","ville":"Kpalimé","segment":"Premium","segment_ia":"Dormant","canal_acquisition":"Référence","nb_commandes":4.0,"montant_total":145000,"recence_jours":271.0,"satisfaction":1.0,"risque_churn":61.0,"niveau_risque":"Élevé","produit_favori":"Produit C"},{"client_id":"CL100","age":31,"sexe":"","ville":"Agoè-Nyivé","segment":"Régulier","segment_ia":"Régulier","canal_acquisition":"Boutique","nb_commandes":3.0,"montant_total":95000,"recence_jours":20.0,"satisfaction":5.0,"risque_churn":8.0,"niveau_risque":"Faible","produit_favori":"Produit A"},{"client_id":"CL101","age":24,"sexe":"M","ville":"Atakpamé","segment":"Dormant","segment_ia":"Acheteur Opportuniste","canal_acquisition":"Facebook","nb_commandes":2.0,"montant_total":350000,"recence_jours":23.0,"satisfaction":2.0,"risque_churn":17.2,"niveau_risque":"Faible","produit_favori":"Produit A"},{"client_id":"CL102","age":27,"sexe":"F","ville":"Tsévié","segment":"Premium","segment_ia":"Dormant","canal_acquisition":"WhatsApp","nb_commandes":4.0,"montant_total":375000,"recence_jours":300.0,"satisfaction":5.0,"risque_churn":45.0,"niveau_risque":"Moyen","produit_favori":"Service X"},{"client_id":"CL103","age":42,"sexe":"M","ville":"Atakpamé","segment":"Nouveau","segment_ia":"Régulier","canal_acquisition":"Facebook","nb_commandes":3.0,"montant_total":70000,"recence_jours":7.0,"satisfaction":4.0,"risque_churn":22.8,"niveau_risque":"Faible","produit_favori":"Service X"},{"client_id":"CL104","age":27,"sexe":"","ville":"Atakpamé","segment":"Régulier","segment_ia":"Explorateur à risque","canal_acquisition":"Facebook","nb_commandes":2.0,"montant_total":85000,"recence_jours":502.0,"satisfaction":4.0,"risque_churn":55.0,"niveau_risque":"Moyen","produit_favori":"Produit C"},{"client_id":"CL105","age":22,"sexe":"M","ville":"Tsévié","segment":"Premium","segment_ia":"Explorateur à risque","canal_acquisition":"Facebook","nb_commandes":1.0,"montant_total":250000,"recence_jours":332.0,"satisfaction":5.0,"risque_churn":50.0,"niveau_risque":"Moyen","produit_favori":"Pack Premium"},{"client_id":"CL106","age":42,"sexe":"M","ville":"Kara","segment":"Nouveau","segment_ia":"Dormant","canal_acquisition":"WhatsApp","nb_commandes":5.0,"montant_total":375000,"recence_jours":171.0,"satisfaction":3.0,"risque_churn":45.0,"niveau_risque":"Moyen","produit_favori":"Produit C"},{"client_id":"CL107","age":42,"sexe":"F","ville":"Lomé","segment":"Régulier","segment_ia":"Régulier","canal_acquisition":"Boutique","nb_commandes":4.0,"montant_total":155000,"recence_jours":57.0,"satisfaction":2.0,"risque_churn":30.8,"niveau_risque":"Faible","produit_favori":"Produit B"},{"client_id":"CL108","age":22,"sexe":"M","ville":"Kpalimé","segment":"Régulier","segment_ia":"Dormant","canal_acquisition":"Site web","nb_commandes":4.0,"montant_total":110000,"recence_jours":157.0,"satisfaction":1.0,"risque_churn":61.0,"niveau_risque":"Élevé","produit_favori":"Produit C"},{"client_id":"CL109","age":27,"sexe":"","ville":"Kpalimé","segment":"Dormant","segment_ia":"Régulier","canal_acquisition":"Site web","nb_commandes":3.0,"montant_total":335000,"recence_jours":68.0,"satisfaction":0.0,"risque_churn":51.2,"niveau_risque":"Moyen","produit_favori":"Pack Entreprise"},{"client_id":"CL110","age":55,"sexe":"M","ville":"Lomé","segment":"Dormant","segment_ia":"Explorateur à risque","canal_acquisition":"Site web","nb_commandes":2.0,"montant_total":300000,"recence_jours":287.0,"satisfaction":1.0,"risque_churn":71.0,"niveau_risque":"Élevé","produit_favori":"Service X"},{"client_id":"CL111","age":22,"sexe":"F","ville":"Lomé","segment":"Régulier","segment_ia":"Explorateur à risque","canal_acquisition":"WhatsApp","nb_commandes":2.0,"montant_total":50000,"recence_jours":332.0,"satisfaction":5.0,"risque_churn":55.0,"niveau_risque":"Moyen","produit_favori":"Service X"},{"client_id":"CL112","age":27,"sexe":"F","ville":"Kara","segment":"Dormant","segment_ia":"Régulier","canal_acquisition":"Référence","nb_commandes":3.0,"montant_total":130000,"recence_jours":31.0,"satisfaction":4.0,"risque_churn":12.4,"niveau_risque":"Faible","produit_favori":"Produit B"},{"client_id":"CL113","age":31,"sexe":"F","ville":"Kara","segment":"Nouveau","segment_ia":"Acheteur Opportuniste","canal_acquisition":"Boutique","nb_commandes":2.0,"montant_total":175000,"recence_jours":110.0,"satisfaction":4.0,"risque_churn":44.0,"niveau_risque":"Moyen","produit_favori":"Produit B"},{"client_id":"CL114","age":47,"sexe":"F","ville":"Kpalimé","segment":"Nouveau","segment_ia":"Régulier","canal_acquisition":"Site web","nb_commandes":5.0,"montant_total":215000,"recence_jours":0.0,"satisfaction":3.0,"risque_churn":0.0,"niveau_risque":"Faible","produit_favori":"Produit B"},{"client_id":"CL115","age":42,"sexe":"F","ville":"Tsévié","segment":"Premium","segment_ia":"Prospect / Jamais acheté","canal_acquisition":"Boutique","nb_commandes":0.0,"montant_total":0,"recence_jours":0.0,"satisfaction":3.0,"risque_churn":5.0,"niveau_risque":"Faible","produit_favori":""},{"client_id":"CL116","age":38,"sexe":"M","ville":"Kara","segment":"Nouveau","segment_ia":"Régulier","canal_acquisition":"Référence","nb_commandes":3.0,"montant_total":280000,"recence_jours":104.0,"satisfaction":5.0,"risque_churn":61.6,"niveau_risque":"Élevé","produit_favori":"Produit B"},{"client_id":"CL117","age":27,"sexe":"M","ville":"Kpalimé","segment":"Dormant","segment_ia":"Régulier","canal_acquisition":"Boutique","nb_commandes":4.0,"montant_total":285000,"recence_jours":137.0,"satisfaction":3.0,"risque_churn":45.0,"niveau_risque":"Moyen","produit_favori":"Produit B"},{"client_id":"CL118","age":24,"sexe":"F","ville":"Kpalimé","segment":"Premium","segment_ia":"Explorateur à risque","canal_acquisition":"Facebook","nb_commandes":2.0,"montant_total":40000,"recence_jours":247.0,"satisfaction":1.0,"risque_churn":61.0,"niveau_risque":"Élevé","produit_favori":"Produit B"},{"client_id":"CL119","age":19,"sexe":"F","ville":"Atakpamé","segment":"Dormant","segment_ia":"Régulier","canal_acquisition":"Boutique","nb_commandes":5.0,"montant_total":240000,"recence_jours":30.0,"satisfaction":3.0,"risque_churn":12.0,"niveau_risque":"Faible","produit_favori":"Produit B"},{"client_id":"CL120","age":27,"sexe":"F","ville":"Agoè-Nyivé","segment":"Dormant","segment_ia":"Explorateur à risque","canal_acquisition":"Site web","nb_commandes":1.0,"montant_total":75000,"recence_jours":549.0,"satisfaction":2.0,"risque_churn":58.0,"niveau_risque":"Moyen","produit_favori":"Produit C"},{"client_id":"CL121","age":24,"sexe":"M","ville":"Atakpamé","segment":"Premium","segment_ia":"Acheteur Opportuniste","canal_acquisition":"Instagram","nb_commandes":2.0,"montant_total":85000,"recence_jours":147.0,"satisfaction":2.0,"risque_churn":53.0,"niveau_risque":"Moyen","produit_favori":"Service X"},{"client_id":"CL122","age":55,"sexe":"","ville":"Lomé","segment":"Dormant","segment_ia":"Régulier","canal_acquisition":"Site web","nb_commandes":6.0,"montant_total":625000,"recence_jours":133.0,"satisfaction":3.0,"risque_churn":65.0,"niveau_risque":"Élevé","produit_favori":"Produit B"},{"client_id":"CL123","age":55,"sexe":"F","ville":"Tsévié","segment":"Nouveau","segment_ia":"Régulier","canal_acquisition":"Instagram","nb_commandes":3.0,"montant_total":315000,"recence_jours":139.0,"satisfaction":3.0,"risque_churn":45.0,"niveau_risque":"Moyen","produit_favori":"Produit C"},{"client_id":"CL124","age":31,"sexe":"M","ville":"Kpalimé","segment":"Régulier","segment_ia":"Prospect / Jamais acheté","canal_acquisition":"Facebook","nb_commandes":0.0,"montant_total":0,"recence_jours":0.0,"satisfaction":5.0,"risque_churn":5.0,"niveau_risque":"Faible","produit_favori":""},{"client_id":"CL125","age":22,"sexe":"M","ville":"Tsévié","segment":"Dormant","segment_ia":"Brand Lover","canal_acquisition":"Référence","nb_commandes":4.0,"montant_total":150000,"recence_jours":0.0,"satisfaction":5.0,"risque_churn":10.0,"niveau_risque":"Faible","produit_favori":"Produit A"},{"client_id":"CL126","age":55,"sexe":"F","ville":"Kpalimé","segment":"Régulier","segment_ia":"Explorateur à risque","canal_acquisition":"Boutique","nb_commandes":1.0,"montant_total":5000,"recence_jours":209.0,"satisfaction":3.0,"risque_churn":50.0,"niveau_risque":"Moyen","produit_favori":"Service X"},{"client_id":"CL127","age":35,"sexe":"M","ville":"Lomé","segment":"Premium","segment_ia":"Explorateur à risque","canal_acquisition":"Instagram","nb_commandes":2.0,"montant_total":135000,"recence_jours":427.0,"satisfaction":5.0,"risque_churn":45.0,"niveau_risque":"Moyen","produit_favori":"Pack Entreprise"},{"client_id":"CL128","age":55,"sexe":"M","ville":"Tsévié","segment":"Premium","segment_ia":"Explorateur à risque","canal_acquisition":"Instagram","nb_commandes":1.0,"montant_total":15000,"recence_jours":463.0,"satisfaction":4.0,"risque_churn":70.0,"niveau_risque":"Élevé","produit_favori":"Pack Premium"},{"client_id":"CL129","age":38,"sexe":"M","ville":"Tsévié","segment":"Premium","segment_ia":"Dormant","canal_acquisition":"Référence","nb_commandes":2.0,"montant_total":85000,"recence_jours":178.0,"satisfaction":2.0,"risque_churn":53.0,"niveau_risque":"Moyen","produit_favori":"Produit A"},{"client_id":"CL130","age":55,"sexe":"","ville":"Lomé","segment":"Premium","segment_ia":"Acheteur Opportuniste","canal_acquisition":"Instagram","nb_commandes":2.0,"montant_total":20000,"recence_jours":28.0,"satisfaction":3.0,"risque_churn":11.2,"niveau_risque":"Faible","produit_favori":"Produit A"},{"client_id":"CL131","age":55,"sexe":"F","ville":"Kpalimé","segment":"Nouveau","segment_ia":"Dormant","canal_acquisition":"Facebook","nb_commandes":1.0,"montant_total":75000,"recence_jours":177.0,"satisfaction":5.0,"risque_churn":50.0,"niveau_risque":"Moyen","produit_favori":"Pack Entreprise"},{"client_id":"CL132","age":47,"sexe":"M","ville":"Atakpamé","segment":"Régulier","segment_ia":"Prospect / Jamais acheté","canal_acquisition":"Facebook","nb_commandes":0.0,"montant_total":0,"recence_jours":0.0,"satisfaction":5.0,"risque_churn":5.0,"niveau_risque":"Faible","produit_favori":""},{"client_id":"CL133","age":42,"sexe":"M","ville":"Kpalimé","segment":"Régulier","segment_ia":"Explorateur à risque","canal_acquisition":"WhatsApp","nb_commandes":2.0,"montant_total":285000,"recence_jours":333.0,"satisfaction":2.0,"risque_churn":63.0,"niveau_risque":"Élevé","produit_favori":"Produit A"},{"client_id":"CL134","age":47,"sexe":"F","ville":"Agoè-Nyivé","segment":"Dormant","segment_ia":"Brand Lover","canal_acquisition":"Boutique","nb_commandes":6.0,"montant_total":270000,"recence_jours":111.0,"satisfaction":4.0,"risque_churn":44.4,"niveau_risque":"Moyen","produit_favori":"Pack Premium"},{"client_id":"CL135","age":31,"sexe":"","ville":"Lomé","segment":"Régulier","segment_ia":"Régulier","canal_acquisition":"Boutique","nb_commandes":3.0,"montant_total":450000,"recence_jours":65.0,"satisfaction":5.0,"risque_churn":26.0,"niveau_risque":"Faible","produit_favori":"Produit C"},{"client_id":"CL136","age":24,"sexe":"M","ville":"Agoè-Nyivé","segment":"Régulier","segment_ia":"Dormant","canal_acquisition":"Boutique","nb_commandes":3.0,"montant_total":100000,"recence_jours":389.0,"satisfaction":0.0,"risque_churn":79.0,"niveau_risque":"Élevé","produit_favori":"Produit A"},{"client_id":"CL137","age":38,"sexe":"F","ville":"Lomé","segment":"Régulier","segment_ia":"Dormant","canal_acquisition":"Référence","nb_commandes":3.0,"montant_total":160000,"recence_jours":151.0,"satisfaction":1.0,"risque_churn":61.0,"niveau_risque":"Élevé","produit_favori":"Produit A"},{"client_id":"CL138","age":29,"sexe":"F","ville":"Agoè-Nyivé","segment":"Nouveau","segment_ia":"Dormant","canal_acquisition":"Site web","nb_commandes":1.0,"montant_total":250000,"recence_jours":155.0,"satisfaction":5.0,"risque_churn":50.0,"niveau_risque":"Moyen","produit_favori":"Service X"},{"client_id":"CL139","age":31,"sexe":"M","ville":"Kara","segment":"Dormant","segment_ia":"Dormant","canal_acquisition":"Facebook","nb_commandes":3.0,"montant_total":95000,"recence_jours":253.0,"satisfaction":0.0,"risque_churn":69.0,"niveau_risque":"Élevé","produit_favori":"Service X"},{"client_id":"CL140","age":31,"sexe":"F","ville":"Kpalimé","segment":"Premium","segment_ia":"Prospect / Jamais acheté","canal_acquisition":"Site web","nb_commandes":0.0,"montant_total":0,"recence_jours":0.0,"satisfaction":5.0,"risque_churn":5.0,"niveau_risque":"Faible","produit_favori":""},{"client_id":"CL141","age":42,"sexe":"","ville":"Agoè-Nyivé","segment":"Dormant","segment_ia":"Dormant","canal_acquisition":"Site web","nb_commandes":4.0,"montant_total":125000,"recence_jours":156.0,"satisfaction":3.0,"risque_churn":45.0,"niveau_risque":"Moyen","produit_favori":"Produit A"},{"client_id":"CL142","age":47,"sexe":"F","ville":"Atakpamé","segment":"Premium","segment_ia":"Prospect / Jamais acheté","canal_acquisition":"Référence","nb_commandes":0.0,"montant_total":0,"recence_jours":0.0,"satisfaction":5.0,"risque_churn":5.0,"niveau_risque":"Faible","produit_favori":""},{"client_id":"CL143","age":35,"sexe":"F","ville":"Tsévié","segment":"Dormant","segment_ia":"Régulier","canal_acquisition":"Référence","nb_commandes":3.0,"montant_total":185000,"recence_jours":63.0,"satisfaction":5.0,"risque_churn":25.2,"niveau_risque":"Faible","produit_favori":"Produit A"},{"client_id":"CL144","age":24,"sexe":"M","ville":"Agoè-Nyivé","segment":"Régulier","segment_ia":"Acheteur Opportuniste","canal_acquisition":"Facebook","nb_commandes":2.0,"montant_total":35000,"recence_jours":75.0,"satisfaction":2.0,"risque_churn":48.0,"niveau_risque":"Moyen","produit_favori":"Produit B"},{"client_id":"CL145","age":24,"sexe":"M","ville":"Agoè-Nyivé","segment":"Premium","segment_ia":"Régulier","canal_acquisition":"Boutique","nb_commandes":3.0,"montant_total":275000,"recence_jours":53.0,"satisfaction":5.0,"risque_churn":21.2,"niveau_risque":"Faible","produit_favori":"Produit B"},{"client_id":"CL146","age":27,"sexe":"M","ville":"Tsévié","segment":"Nouveau","segment_ia":"Régulier","canal_acquisition":"Référence","nb_commandes":3.0,"montant_total":160000,"recence_jours":63.0,"satisfaction":4.0,"risque_churn":25.2,"niveau_risque":"Faible","produit_favori":"Pack Entreprise"},{"client_id":"CL147","age":27,"sexe":"","ville":"Agoè-Nyivé","segment":"Dormant","segment_ia":"Régulier","canal_acquisition":"Facebook","nb_commandes":4.0,"montant_total":85000,"recence_jours":26.0,"satisfaction":1.0,"risque_churn":26.4,"niveau_risque":"Faible","produit_favori":"Produit B"},{"client_id":"CL148","age":24,"sexe":"","ville":"Atakpamé","segment":"Régulier","segment_ia":"Brand Lover","canal_acquisition":"Instagram","nb_commandes":4.0,"montant_total":425000,"recence_jours":45.0,"satisfaction":5.0,"risque_churn":18.0,"niveau_risque":"Faible","produit_favori":"Service X"},{"client_id":"CL149","age":24,"sexe":"F","ville":"Agoè-Nyivé","segment":"Premium","segment_ia":"Prospect / Jamais acheté","canal_acquisition":"Instagram","nb_commandes":0.0,"montant_total":0,"recence_jours":0.0,"satisfaction":5.0,"risque_churn":5.0,"niveau_risque":"Faible","produit_favori":""},{"client_id":"CL150","age":47,"sexe":"F","ville":"Kpalimé","segment":"Premium","segment_ia":"Prospect / Jamais acheté","canal_acquisition":"Facebook","nb_commandes":0.0,"montant_total":0,"recence_jours":0.0,"satisfaction":4.0,"risque_churn":5.0,"niveau_risque":"Faible","produit_favori":""},{"client_id":"CL151","age":47,"sexe":"M","ville":"Kara","segment":"Régulier","segment_ia":"Explorateur à risque","canal_acquisition":"Instagram","nb_commandes":1.0,"montant_total":5000,"recence_jours":407.0,"satisfaction":5.0,"risque_churn":60.0,"niveau_risque":"Élevé","produit_favori":"Produit B"},{"client_id":"CL152","age":24,"sexe":"","ville":"Agoè-Nyivé","segment":"Premium","segment_ia":"Brand Lover","canal_acquisition":"Instagram","nb_commandes":4.0,"montant_total":300000,"recence_jours":0.0,"satisfaction":4.0,"risque_churn":10.0,"niveau_risque":"Faible","produit_favori":"Service X"},{"client_id":"CL153","age":47,"sexe":"","ville":"Lomé","segment":"Régulier","segment_ia":"Dormant","canal_acquisition":"Référence","nb_commandes":4.0,"montant_total":235000,"recence_jours":304.0,"satisfaction":2.0,"risque_churn":63.0,"niveau_risque":"Élevé","produit_favori":"Produit A"},{"client_id":"CL154","age":22,"sexe":"F","ville":"Agoè-Nyivé","segment":"Dormant","segment_ia":"Prospect / Jamais acheté","canal_acquisition":"Instagram","nb_commandes":0.0,"montant_total":0,"recence_jours":0.0,"satisfaction":2.0,"risque_churn":13.0,"niveau_risque":"Faible","produit_favori":""},{"client_id":"CL155","age":38,"sexe":"","ville":"Atakpamé","segment":"Nouveau","segment_ia":"Acheteur Opportuniste","canal_acquisition":"Boutique","nb_commandes":2.0,"montant_total":25000,"recence_jours":23.0,"satisfaction":1.0,"risque_churn":35.2,"niveau_risque":"Moyen","produit_favori":"Service X"},{"client_id":"CL156","age":38,"sexe":"M","ville":"Atakpamé","segment":"Nouveau","segment_ia":"Prospect / Jamais acheté","canal_acquisition":"Site web","nb_commandes":0.0,"montant_total":0,"recence_jours":0.0,"satisfaction":5.0,"risque_churn":5.0,"niveau_risque":"Faible","produit_favori":""},{"client_id":"CL157","age":35,"sexe":"F","ville":"Lomé","segment":"Dormant","segment_ia":"Régulier","canal_acquisition":"Instagram","nb_commandes":3.0,"montant_total":50000,"recence_jours":89.0,"satisfaction":4.0,"risque_churn":45.6,"niveau_risque":"Moyen","produit_favori":"Produit C"},{"client_id":"CL158","age":31,"sexe":"","ville":"Kpalimé","segment":"Nouveau","segment_ia":"Explorateur à risque","canal_acquisition":"Référence","nb_commandes":1.0,"montant_total":25000,"recence_jours":247.0,"satisfaction":3.0,"risque_churn":60.0,"niveau_risque":"Élevé","produit_favori":"Produit C"},{"client_id":"CL159","age":38,"sexe":"M","ville":"Lomé","segment":"Premium","segment_ia":"Explorateur à risque","canal_acquisition":"Boutique","nb_commandes":1.0,"montant_total":50000,"recence_jours":239.0,"satisfaction":3.0,"risque_churn":60.0,"niveau_risque":"Élevé","produit_favori":"Pack Entreprise"},{"client_id":"CL160","age":27,"sexe":"F","ville":"Kpalimé","segment":"Nouveau","segment_ia":"Acheteur Opportuniste","canal_acquisition":"Boutique","nb_commandes":2.0,"montant_total":50000,"recence_jours":38.0,"satisfaction":5.0,"risque_churn":25.2,"niveau_risque":"Faible","produit_favori":"Pack Entreprise"},{"client_id":"CL161","age":19,"sexe":"M","ville":"Kpalimé","segment":"Régulier","segment_ia":"Dormant","canal_acquisition":"Site web","nb_commandes":3.0,"montant_total":165000,"recence_jours":286.0,"satisfaction":4.0,"risque_churn":45.0,"niveau_risque":"Moyen","produit_favori":"Service X"},{"client_id":"CL162","age":31,"sexe":"F","ville":"Agoè-Nyivé","segment":"Dormant","segment_ia":"Régulier","canal_acquisition":"Site web","nb_commandes":3.0,"montant_total":145000,"recence_jours":26.0,"satisfaction":3.0,"risque_churn":10.4,"niveau_risque":"Faible","produit_favori":"Pack Premium"},{"client_id":"CL163","age":42,"sexe":"M","ville":"Atakpamé","segment":"Premium","segment_ia":"Dormant","canal_acquisition":"Boutique","nb_commandes":3.0,"montant_total":360000,"recence_jours":220.0,"satisfaction":0.0,"risque_churn":69.0,"niveau_risque":"Élevé","produit_favori":"Produit A"},{"client_id":"CL164","age":35,"sexe":"M","ville":"Kara","segment":"Dormant","segment_ia":"Explorateur à risque","canal_acquisition":"Instagram","nb_commandes":1.0,"montant_total":35000,"recence_jours":394.0,"satisfaction":5.0,"risque_churn":50.0,"niveau_risque":"Moyen","produit_favori":"Produit A"},{"client_id":"CL165","age":42,"sexe":"M","ville":"Tsévié","segment":"Premium","segment_ia":"Explorateur à risque","canal_acquisition":"Boutique","nb_commandes":1.0,"montant_total":15000,"recence_jours":341.0,"satisfaction":0.0,"risque_churn":74.0,"niveau_risque":"Élevé","produit_favori":"Produit A"},{"client_id":"CL166","age":35,"sexe":"M","ville":"Kpalimé","segment":"Nouveau","segment_ia":"Dormant","canal_acquisition":"Site web","nb_commandes":4.0,"montant_total":135000,"recence_jours":239.0,"satisfaction":4.0,"risque_churn":65.0,"niveau_risque":"Élevé","produit_favori":"Pack Premium"},{"client_id":"CL167","age":24,"sexe":"F","ville":"Agoè-Nyivé","segment":"Dormant","segment_ia":"Prospect / Jamais acheté","canal_acquisition":"WhatsApp","nb_commandes":0.0,"montant_total":0,"recence_jours":0.0,"satisfaction":2.0,"risque_churn":13.0,"niveau_risque":"Faible","produit_favori":""},{"client_id":"CL168","age":35,"sexe":"F","ville":"Lomé","segment":"Régulier","segment_ia":"Dormant","canal_acquisition":"Référence","nb_commandes":5.0,"montant_total":435000,"recence_jours":254.0,"satisfaction":1.0,"risque_churn":61.0,"niveau_risque":"Élevé","produit_favori":"Pack Premium"},{"client_id":"CL169","age":22,"sexe":"F","ville":"Agoè-Nyivé","segment":"Premium","segment_ia":"Régulier","canal_acquisition":"Facebook","nb_commandes":3.0,"montant_total":115000,"recence_jours":110.0,"satisfaction":4.0,"risque_churn":64.0,"niveau_risque":"Élevé","produit_favori":"Service X"},{"client_id":"CL170","age":35,"sexe":"M","ville":"Atakpamé","segment":"Premium","segment_ia":"Explorateur à risque","canal_acquisition":"Site web","nb_commandes":1.0,"montant_total":35000,"recence_jours":459.0,"satisfaction":2.0,"risque_churn":83.0,"niveau_risque":"Élevé","produit_favori":"Pack Premium"},{"client_id":"CL171","age":55,"sexe":"M","ville":"Kara","segment":"Nouveau","segment_ia":"Régulier","canal_acquisition":"Instagram","nb_commandes":3.0,"montant_total":125000,"recence_jours":20.0,"satisfaction":2.0,"risque_churn":16.0,"niveau_risque":"Faible","produit_favori":"Produit C"},{"client_id":"CL172","age":19,"sexe":"","ville":"Atakpamé","segment":"Régulier","segment_ia":"Prospect / Jamais acheté","canal_acquisition":"Boutique","nb_commandes":0.0,"montant_total":0,"recence_jours":0.0,"satisfaction":0.0,"risque_churn":39.0,"niveau_risque":"Moyen","produit_favori":""},{"client_id":"CL173","age":19,"sexe":"F","ville":"Agoè-Nyivé","segment":"Nouveau","segment_ia":"Régulier","canal_acquisition":"Instagram","nb_commandes":3.0,"montant_total":265000,"recence_jours":142.0,"satisfaction":3.0,"risque_churn":55.0,"niveau_risque":"Moyen","produit_favori":"Service X"},{"client_id":"CL174","age":35,"sexe":"F","ville":"Kpalimé","segment":"Dormant","segment_ia":"Brand Lover","canal_acquisition":"Référence","nb_commandes":4.0,"montant_total":475000,"recence_jours":62.0,"satisfaction":5.0,"risque_churn":34.8,"niveau_risque":"Faible","produit_favori":"Produit B"},{"client_id":"CL175","age":19,"sexe":"F","ville":"Lomé","segment":"Premium","segment_ia":"Explorateur à risque","canal_acquisition":"Site web","nb_commandes":1.0,"montant_total":35000,"recence_jours":287.0,"satisfaction":3.0,"risque_churn":50.0,"niveau_risque":"Moyen","produit_favori":"Produit C"},{"client_id":"CL176","age":29,"sexe":"M","ville":"Atakpamé","segment":"Régulier","segment_ia":"Brand Lover","canal_acquisition":"Référence","nb_commandes":4.0,"montant_total":185000,"recence_jours":135.0,"satisfaction":5.0,"risque_churn":45.0,"niveau_risque":"Moyen","produit_favori":"Produit C"},{"client_id":"CL177","age":19,"sexe":"F","ville":"Agoè-Nyivé","segment":"Dormant","segment_ia":"Dormant","canal_acquisition":"Boutique","nb_commandes":3.0,"montant_total":170000,"recence_jours":225.0,"satisfaction":5.0,"risque_churn":55.0,"niveau_risque":"Moyen","produit_favori":"Produit A"},{"client_id":"CL178","age":22,"sexe":"","ville":"Tsévié","segment":"Premium","segment_ia":"Explorateur à risque","canal_acquisition":"Facebook","nb_commandes":1.0,"montant_total":250000,"recence_jours":593.0,"satisfaction":5.0,"risque_churn":50.0,"niveau_risque":"Moyen","produit_favori":"Pack Premium"},{"client_id":"CL179","age":47,"sexe":"F","ville":"Kpalimé","segment":"Dormant","segment_ia":"Dormant","canal_acquisition":"Référence","nb_commandes":2.0,"montant_total":110000,"recence_jours":176.0,"satisfaction":2.0,"risque_churn":53.0,"niveau_risque":"Moyen","produit_favori":"Pack Entreprise"},{"client_id":"CL180","age":31,"sexe":"M","ville":"Kpalimé","segment":"Dormant","segment_ia":"Explorateur à risque","canal_acquisition":"Boutique","nb_commandes":1.0,"montant_total":100000,"recence_jours":273.0,"satisfaction":4.0,"risque_churn":60.0,"niveau_risque":"Élevé","produit_favori":"Produit C"},{"client_id":"CL181","age":22,"sexe":"F","ville":"Lomé","segment":"Dormant","segment_ia":"Acheteur Opportuniste","canal_acquisition":"Site web","nb_commandes":2.0,"montant_total":40000,"recence_jours":38.0,"satisfaction":4.0,"risque_churn":15.2,"niveau_risque":"Faible","produit_favori":"Produit C"},{"client_id":"CL182","age":27,"sexe":"F","ville":"Kara","segment":"Premium","segment_ia":"Dormant","canal_acquisition":"Boutique","nb_commandes":4.0,"montant_total":100000,"recence_jours":300.0,"satisfaction":0.0,"risque_churn":79.0,"niveau_risque":"Élevé","produit_favori":"Produit A"},{"client_id":"CL183","age":29,"sexe":"M","ville":"Tsévié","segment":"Nouveau","segment_ia":"Régulier","canal_acquisition":"Référence","nb_commandes":4.0,"montant_total":205000,"recence_jours":47.0,"satisfaction":1.0,"risque_churn":34.8,"niveau_risque":"Faible","produit_favori":"Service X"},{"client_id":"CL184","age":42,"sexe":"M","ville":"Kara","segment":"Premium","segment_ia":"Acheteur Opportuniste","canal_acquisition":"WhatsApp","nb_commandes":2.0,"montant_total":135000,"recence_jours":100.0,"satisfaction":5.0,"risque_churn":40.0,"niveau_risque":"Moyen","produit_favori":"Pack Entreprise"},{"client_id":"CL185","age":29,"sexe":"M","ville":"Kpalimé","segment":"Régulier","segment_ia":"Régulier","canal_acquisition":"Référence","nb_commandes":5.0,"montant_total":625000,"recence_jours":99.0,"satisfaction":2.0,"risque_churn":47.6,"niveau_risque":"Moyen","produit_favori":"Service X"},{"client_id":"CL186","age":27,"sexe":"F","ville":"Agoè-Nyivé","segment":"Régulier","segment_ia":"Prospect / Jamais acheté","canal_acquisition":"Instagram","nb_commandes":0.0,"montant_total":0,"recence_jours":0.0,"satisfaction":5.0,"risque_churn":5.0,"niveau_risque":"Faible","produit_favori":""},{"client_id":"CL187","age":31,"sexe":"M","ville":"Lomé","segment":"Nouveau","segment_ia":"Brand Lover","canal_acquisition":"Facebook","nb_commandes":5.0,"montant_total":375000,"recence_jours":72.0,"satisfaction":5.0,"risque_churn":28.8,"niveau_risque":"Faible","produit_favori":"Pack Entreprise"},{"client_id":"CL188","age":19,"sexe":"","ville":"Lomé","segment":"Dormant","segment_ia":"Acheteur Opportuniste","canal_acquisition":"WhatsApp","nb_commandes":2.0,"montant_total":350000,"recence_jours":132.0,"satisfaction":4.0,"risque_churn":45.0,"niveau_risque":"Moyen","produit_favori":"Service X"},{"client_id":"CL189","age":47,"sexe":"F","ville":"Kara","segment":"Régulier","segment_ia":"Dormant","canal_acquisition":"Boutique","nb_commandes":3.0,"montant_total":40000,"recence_jours":417.0,"satisfaction":4.0,"risque_churn":45.0,"niveau_risque":"Moyen","produit_favori":"Produit B"},{"client_id":"CL190","age":27,"sexe":"","ville":"Agoè-Nyivé","segment":"Nouveau","segment_ia":"Régulier","canal_acquisition":"Boutique","nb_commandes":3.0,"montant_total":270000,"recence_jours":61.0,"satisfaction":4.0,"risque_churn":34.4,"niveau_risque":"Faible","produit_favori":"Produit B"},{"client_id":"CL191","age":42,"sexe":"F","ville":"Atakpamé","segment":"Premium","segment_ia":"Explorateur à risque","canal_acquisition":"Référence","nb_commandes":1.0,"montant_total":100000,"recence_jours":351.0,"satisfaction":4.0,"risque_churn":50.0,"niveau_risque":"Moyen","produit_favori":"Produit C"},{"client_id":"CL192","age":22,"sexe":"","ville":"Kara","segment":"Premium","segment_ia":"Acheteur Opportuniste","canal_acquisition":"Site web","nb_commandes":2.0,"montant_total":125000,"recence_jours":66.0,"satisfaction":1.0,"risque_churn":52.4,"niveau_risque":"Moyen","produit_favori":"Produit B"},{"client_id":"CL193","age":55,"sexe":"M","ville":"Kara","segment":"Nouveau","segment_ia":"Dormant","canal_acquisition":"WhatsApp","nb_commandes":3.0,"montant_total":65000,"recence_jours":296.0,"satisfaction":5.0,"risque_churn":45.0,"niveau_risque":"Moyen","produit_favori":"Service X"},{"client_id":"CL194","age":29,"sexe":"M","ville":"Atakpamé","segment":"Premium","segment_ia":"Régulier","canal_acquisition":"Instagram","nb_commandes":3.0,"montant_total":335000,"recence_jours":123.0,"satisfaction":4.0,"risque_churn":45.0,"niveau_risque":"Moyen","produit_favori":"Produit A"},{"client_id":"CL195","age":47,"sexe":"F","ville":"Tsévié","segment":"Régulier","segment_ia":"Acheteur Opportuniste","canal_acquisition":"Référence","nb_commandes":1.0,"montant_total":100000,"recence_jours":59.0,"satisfaction":2.0,"risque_churn":36.6,"niveau_risque":"Moyen","produit_favori":"Pack Entreprise"},{"client_id":"CL196","age":35,"sexe":"F","ville":"Tsévié","segment":"Dormant","segment_ia":"Dormant","canal_acquisition":"WhatsApp","nb_commandes":3.0,"montant_total":375000,"recence_jours":473.0,"satisfaction":2.0,"risque_churn":78.0,"niveau_risque":"Élevé","produit_favori":"Pack Entreprise"},{"client_id":"CL197","age":47,"sexe":"M","ville":"Atakpamé","segment":"Régulier","segment_ia":"Explorateur à risque","canal_acquisition":"Facebook","nb_commandes":1.0,"montant_total":35000,"recence_jours":559.0,"satisfaction":2.0,"risque_churn":68.0,"niveau_risque":"Élevé","produit_favori":"Pack Premium"},{"client_id":"CL198","age":42,"sexe":"M","ville":"Kara","segment":"Régulier","segment_ia":"Dormant","canal_acquisition":"Instagram","nb_commandes":4.0,"montant_total":150000,"recence_jours":205.0,"satisfaction":4.0,"risque_churn":45.0,"niveau_risque":"Moyen","produit_favori":"Produit B"},{"client_id":"CL199","age":19,"sexe":"M","ville":"Kara","segment":"Dormant","segment_ia":"Explorateur à risque","canal_acquisition":"Instagram","nb_commandes":2.0,"montant_total":350000,"recence_jours":210.0,"satisfaction":4.0,"risque_churn":45.0,"niveau_risque":"Moyen","produit_favori":"Produit A"},{"client_id":"CL200","age":29,"sexe":"F","ville":"Atakpamé","segment":"Nouveau","segment_ia":"Dormant","canal_acquisition":"Référence","nb_commandes":3.0,"montant_total":270000,"recence_jours":405.0,"satisfaction":3.0,"risque_churn":65.0,"niveau_risque":"Élevé","produit_favori":"Produit A"}],"villes":{"Kpalimé":41,"Atakpamé":35,"Agoè-Nyivé":33,"Lomé":32,"Tsévié":31,"Kara":28}}
+</script>
+<script>
+const DATA = JSON.parse(document.getElementById('app-data').textContent);
+const fmtFCFA = n => Math.round(n).toLocaleString('fr-FR') + ' FCFA';
+const fmtNum = n => Number(n).toLocaleString('fr-FR');
+
+/* ============ THEME ============ */
+const themeBtn = document.getElementById('themeToggle');
+function applyTheme(t){
+  if(t){ document.documentElement.setAttribute('data-theme', t); }
+  else { document.documentElement.removeAttribute('data-theme'); }
+  themeBtn.textContent = (t==='dark') ? 'Mode clair' : 'Mode sombre';
+}
+applyTheme(null);
+themeBtn.addEventListener('click', ()=>{
+  const cur = document.documentElement.getAttribute('data-theme');
+  applyTheme(cur==='dark' ? 'light' : 'dark');
+});
+document.getElementById('dateRef').textContent = 'Données au 04/09/2026';
+
+/* ============ CLAUDE (sample capability) ============ */
+let claudeSample = null;
+(async () => {
+  try {
+    if (typeof claude !== 'undefined') claudeSample = await claude.use('sample');
+  } catch(e) { claudeSample = null; }
+})();
+
+const CONTEXT_SUMMARY = `Tu es l'agent d'analyse client d'ELAVAGNON, une PME togolaise qui vend des produits/services à des jeunes actifs (Produit A, Produit B, Produit C, Pack Premium, Pack Entreprise, Service X).
+Voici un résumé chiffré de la base de 200 clients (analyse au 04/09/2026) :
+- Chiffre d'affaires total : ${fmtFCFA(DATA.kpi_globaux.ca_total)} sur ${DATA.kpi_globaux.nb_commandes} commandes, panier moyen ${fmtFCFA(DATA.kpi_globaux.panier_moyen)}.
+- Satisfaction moyenne : ${DATA.kpi_globaux.satisfaction_moyenne}/5. Taux de clients actifs (achat <90j) : ${DATA.kpi_globaux.taux_actifs_90j}%.
+- Segmentation comportementale (nb clients) : ${JSON.stringify(DATA.clients_par_segment)}.
+- CA par segment : ${JSON.stringify(DATA.ca_par_segment)}.
+- Niveaux de risque de churn (score 0-100 basé sur récence d'achat, réclamations non résolues, satisfaction) : ${JSON.stringify(DATA.risque_churn)}.
+- Top produits par segment : ${JSON.stringify(DATA.top_produits_par_segment)}.
+- Performance par canal d'acquisition (nb clients, satisfaction moy, CA moyen) : ${JSON.stringify(DATA.performance_canaux)}.
+- Sentiment des avis clients (NLP) : ${JSON.stringify(DATA.sentiment_avis)}. Thèmes récurrents : ${JSON.stringify(DATA.themes_avis)}.
+- Motifs de réclamations : ${JSON.stringify(DATA.motifs_reclamations)}. Gravité : ${JSON.stringify(DATA.gravite_reclamations)}.
+- ${DATA.nb_opportunites_cross_sell} opportunités de vente croisée identifiées chez les "Brand Lovers".
+Réponds toujours en français, de façon concise (5-8 lignes maximum), concrète et orientée action pour une PME. Appuie-toi uniquement sur les chiffres fournis, ne les invente pas. Structure ta réponse avec des tirets si utile.`;
+
+function localAgentResponse(prompt){
+  const text = prompt.toLowerCase();
+  if (text.includes('newsletter')) {
+    const seg = prompt.match(/segment "([^"]+)"/i)?.[1] || 'vos clients';
+    const products = DATA.top_produits_par_segment[seg]?.slice(0,2).map(x=>x.produit).join(' et ') || 'vos produits stars';
+    return `- Segment ciblé : ${seg}.\n- Objet : Découvrez ${products}, les incontournables du moment.\n- Contenu : présentez ces offres avec un bénéfice concret et un appel à l'action simple.\n- Appuyez le message par une relance personnalisée selon l'historique d'achat.`;
+  }
+  if (text.includes('rétention') || text.includes('churn') || text.includes('risque élevé')) {
+    return `- Priorité 1 : contacter rapidement le client avec un message personnalisé.\n- Priorité 2 : traiter toute réclamation non résolue et confirmer sa résolution.\n- Priorité 3 : proposer une offre liée à son segment et à ses achats précédents.\n- Le tableau compte ${DATA.risque_churn['Élevé']} clients à risque élevé et ${DATA.kpi_globaux.taux_reclamations_non_resolues}% de réclamations non résolues.`;
+  }
+  if (text.includes('vente') || text.includes('whatsapp')) {
+    return `- Contactez le client par WhatsApp avec un message court et personnalisé.\n- Mettez en avant les produits recommandés selon son historique.\n- Proposez une offre découverte limitée dans le temps.\n- Les opportunités de vente croisée identifiées sont au nombre de ${DATA.nb_opportunites_cross_sell}.`;
+  }
+  if (text.includes('synthèse') || text.includes('priorités') || text.includes('constats')) {
+    return `- Le chiffre d'affaires atteint ${fmtFCFA(DATA.kpi_globaux.ca_total)} sur ${DATA.kpi_globaux.nb_commandes} commandes.\n- ${DATA.kpi_globaux.taux_actifs_90j}% des clients ont acheté dans les 90 derniers jours.\n- La satisfaction moyenne est de ${DATA.kpi_globaux.satisfaction_moyenne}/5.\n- Priorités : réduire les réclamations non résolues, réactiver les clients à risque et développer le cross-sell.`;
+  }
+  return `- La base compte ${DATA.kpi_globaux.nb_clients} clients et ${DATA.kpi_globaux.nb_commandes} commandes.\n- Le chiffre d'affaires total est de ${fmtFCFA(DATA.kpi_globaux.ca_total)}.\n- Les clients actifs représentent ${DATA.kpi_globaux.taux_actifs_90j}% de la base.\n- Consultez les vues Marketing, Commercial et Relation client pour une recommandation ciblée.`;
+}
+
+async function askAgent(prompt, outEl, opts={}){
+  if(!claudeSample){
+    try {
+      if (typeof claude !== 'undefined') claudeSample = await claude.use('sample');
+    } catch(e){}
+  }
+  if(!claudeSample){
+    outEl.classList.add('show');
+    outEl.textContent = localAgentResponse(prompt);
+    return;
+  }
+  outEl.classList.add('show');
+  outEl.innerHTML = '<span class="loading-dots"><span></span><span></span><span></span></span>';
+  try{
+    const res = await claudeSample([
+      {role:'user', content: (opts.system || CONTEXT_SUMMARY) + "\n\n" + prompt}
+    ], { modelTier:'default', onText: ({text}) => { outEl.textContent = text; } });
+    outEl.textContent = res.text;
+  }catch(err){
+    outEl.textContent = localAgentResponse(prompt);
+  }
+}
+
+/* ============ NAV ============ */
+const views = {};
+function showView(name){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active', b.dataset.view===name));
+  document.getElementById('view-'+name).classList.add('active');
+}
+document.getElementById('nav').addEventListener('click', e=>{
+  const btn = e.target.closest('button[data-view]');
+  if(!btn) return;
+  showView(btn.dataset.view);
+});
+
+/* ============ CHART HELPERS ============ */
+if (typeof Chart !== 'undefined') {
+  Chart.defaults.font.family = "'IBM Plex Sans', sans-serif";
+}
+function cssVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+function chartColors(){
+  return {
+    ink: cssVar('--ink'), muted: cssVar('--muted'), border: cssVar('--border'),
+    accent: cssVar('--accent'), accent2: cssVar('--accent-2'), accent3: cssVar('--accent-3'), accent4: cssVar('--accent-4')
+  };
+}
+const charts = [];
+function registerChart(c){ charts.push(c); }
+function baseGrid(){ const c = chartColors(); return { color: c.border, drawTicks:false }; }
+function baseTicks(){ const c = chartColors(); return { color: c.muted, font:{size:11} }; }
+
+/* ============ BUILD MAIN LAYOUT ============ */
+const main = document.getElementById('main');
+main.innerHTML = `
+<section class="view active" id="view-overview">${overviewHTML()}</section>
+<section class="view" id="view-marketing">${marketingHTML()}</section>
+<section class="view" id="view-commercial">${commercialHTML()}</section>
+<section class="view" id="view-relation">${relationHTML()}</section>
+<section class="view" id="view-clients">${clientsHTML()}</section>
+<section class="view" id="view-agents">${agentsHTML()}</section>
+`;
+
+function overviewHTML(){
+  const k = DATA.kpi_globaux;
+  return `
+  <div class="view-head">
+    <div><div class="eyebrow">Dirigeants</div><h2>Vue d'ensemble</h2>
+    <p>Santé globale de la relation client, chiffre d'affaires et risque de churn — pour arbitrer vos priorités en un coup d'œil.</p></div>
+  </div>
+  <div class="kpi-row">
+    <div class="kpi pos"><div class="label">Chiffre d'affaires</div><div class="value">${(k.ca_total/1000000).toFixed(1)} M</div><div class="sub">FCFA sur ${k.nb_commandes} commandes</div></div>
+    <div class="kpi"><div class="label">Panier moyen</div><div class="value">${fmtFCFA(k.panier_moyen)}</div><div class="sub">par commande</div></div>
+    <div class="kpi info"><div class="label">Clients actifs (90j)</div><div class="value">${k.taux_actifs_90j}%</div><div class="sub">ont acheté récemment</div></div>
+    <div class="kpi"><div class="label">Satisfaction moyenne</div><div class="value">${k.satisfaction_moyenne}/5</div><div class="sub">tous canaux confondus</div></div>
+    <div class="kpi risk"><div class="label">Réclamations non résolues</div><div class="value">${k.taux_reclamations_non_resolues}%</div><div class="sub">du volume total</div></div>
+  </div>
+  <div class="grid two">
+    <div class="panel"><h3>Évolution du chiffre d'affaires</h3><p class="panel-sub">CA mensuel, janvier 2025 – septembre 2026</p>
+      <div class="chart-wrap"><canvas id="chartCA"></canvas></div>
+    </div>
+    <div class="panel"><h3>Répartition du risque de churn</h3><p class="panel-sub">Score IA combinant récence, réclamations et satisfaction</p>
+      <div class="chart-wrap"><canvas id="chartRisk"></canvas></div>
+    </div>
+  </div>
+  <div class="grid two" style="margin-top:16px;">
+    <div class="panel"><h3>Chiffre d'affaires par segment</h3><p class="panel-sub">Où se trouve la valeur client aujourd'hui</p>
+      <div class="chart-wrap"><canvas id="chartCASeg"></canvas></div>
+    </div>
+    <div class="panel"><h3>Clients par segment</h3><p class="panel-sub">Répartition de la base (200 clients)</p>
+      <div class="chart-wrap"><canvas id="chartClientSeg"></canvas></div>
+    </div>
+  </div>
+  <div class="agent-card" style="margin-top:16px;">
+    <div class="tag"><span class="dot"></span>Agent IA — synthèse dirigeante</div>
+    <p>Demandez à l'agent un résumé exécutif : priorités, segments à surveiller, actions à plus fort impact sur le ROI.</p>
+    <button class="btn" id="btnExecSummary">Générer la synthèse</button>
+    <div class="ai-output" id="outExecSummary"></div>
+  </div>
+  `;
+}
+
+function marketingHTML(){
+  const segs = Object.keys(DATA.top_produits_par_segment);
+  const opts = segs.map(s=>`<option value="${s}">${s}</option>`).join('');
+  return `
+  <div class="view-head">
+    <div><div class="eyebrow">Marketing</div><h2>Pilotage de l'offre</h2>
+    <p>Quels produits mettre en avant, pour quel segment, sur quel canal — sur la base des comportements réels plutôt que du ressenti.</p></div>
+  </div>
+  <div class="grid two">
+    <div class="panel">
+      <h3>Produits stars par segment</h3><p class="panel-sub">Sélectionnez un segment pour voir son top 3</p>
+      <select id="segSelect">${opts}</select>
+      <div class="chart-wrap" style="margin-top:12px;"><canvas id="chartTopProd"></canvas></div>
+    </div>
+    <div class="panel">
+      <h3>Performance des canaux d'acquisition</h3><p class="panel-sub">Satisfaction moyenne des clients acquis par canal</p>
+      <div class="chart-wrap"><canvas id="chartCanaux"></canvas></div>
+    </div>
+  </div>
+  <div class="grid two" style="margin-top:16px;">
+    <div class="panel"><h3>Sentiment des avis clients (NLP)</h3><p class="panel-sub">${DATA.sentiment_avis.Positif+DATA.sentiment_avis.Neutre+DATA.sentiment_avis.Négatif} avis analysés automatiquement</p>
+      <div class="chart-wrap sm"><canvas id="chartSentiment"></canvas></div>
+    </div>
+    <div class="panel"><h3>Thèmes récurrents des avis</h3><p class="panel-sub">Détection automatique des sujets mentionnés</p>
+      <div class="chart-wrap sm"><canvas id="chartThemes"></canvas></div>
+    </div>
+  </div>
+  <div class="agent-card" style="margin-top:16px;">
+    <div class="tag"><span class="dot"></span>Agent IA — recommandation newsletter</div>
+    <p>L'agent système de recommandation propose une thématique de newsletter pour le segment sélectionné, basée sur ses produits favoris et son sentiment.</p>
+    <button class="btn" id="btnNewsletterIdea">Générer une idée de newsletter pour ce segment</button>
+    <div class="ai-output" id="outNewsletter"></div>
+  </div>
+  `;
+}
+
+function commercialHTML(){
+  const rows = DATA.opportunites_cross_sell.map(o=>`
+    <tr>
+      <td><strong>${o.client_id}</strong></td>
+      <td>${o.produits_suggeres.join(', ')}</td>
+      <td><button class="btn sm ghost" data-crosssell='${JSON.stringify(o).replace(/'/g,"&#39;")}'>Message de vente</button></td>
+    </tr>`).join('');
+  return `
+  <div class="view-head">
+    <div><div class="eyebrow">Commercial</div><h2>Opportunités de vente</h2>
+    <p>Ventes croisées détectées automatiquement chez vos meilleurs clients, et leviers de fidélisation par le parrainage.</p></div>
+  </div>
+  <div class="kpi-row">
+    <div class="kpi pos"><div class="label">Brand Lovers</div><div class="value">${DATA.clients_par_segment['Brand Lover']||0}</div><div class="sub">clients à forte valeur</div></div>
+    <div class="kpi"><div class="label">Opportunités cross-sell</div><div class="value">${DATA.nb_opportunites_cross_sell}</div><div class="sub">suggestions actives</div></div>
+    <div class="kpi info"><div class="label">CA Brand Lovers</div><div class="value">${((DATA.ca_par_segment['Brand Lover']||0)/1000000).toFixed(1)} M</div><div class="sub">FCFA générés</div></div>
+  </div>
+  <div class="panel">
+    <h3>Suggestions de vente croisée</h3><p class="panel-sub">Produits populaires du segment que le client n'a pas encore achetés</p>
+    <div style="max-height:340px;overflow-y:auto;">
+    <table><thead><tr><th>Client</th><th>Produits suggérés</th><th></th></tr></thead><tbody>${rows}</tbody></table>
+    </div>
+    <div class="ai-output" id="outCrossSell"></div>
+  </div>
+  <div class="section-title">Stratégie par segment</div>
+  <div class="grid three">
+    <div class="agent-card"><div class="tag"><span class="dot"></span>Brand Lovers</div><p>Programme de parrainage et co-création de produits. Ce sont vos meilleurs ambassadeurs — sollicitez-les pour des retours produit.</p></div>
+    <div class="agent-card"><div class="tag"><span class="dot"></span>Acheteurs opportunistes</div><p>Campagnes "push" ciblées en fin de mois, au moment du cycle de paie des jeunes actifs.</p></div>
+    <div class="agent-card"><div class="tag"><span class="dot"></span>Explorateurs à risque</div><p>Réactivation par du contenu à valeur ajoutée (usage produit) plutôt que par la promotion directe.</p></div>
+  </div>
+  `;
+}
+
+function relationHTML(){
+  const rows = DATA.reclamations_prioritaires.map(r=>`
+    <tr>
+      <td>${r.reclamation_id}</td><td><strong>${r.client_id}</strong></td><td>${r.motif}</td>
+      <td><span class="pill risk-${r.gravite==='Élevée'?'Élevé':(r.gravite==='Moyenne'?'Moyen':'Faible')}">${r.gravite}</span></td>
+      <td>${r.resolution}</td><td>${r.segment_ia}</td>
+    </tr>`).join('');
+  const riskRows = DATA.clients_risque_eleve.map(c=>`
+    <tr>
+      <td><strong>${c.client_id}</strong></td><td>${c.segment_ia}</td><td>${Math.round(c.risque_churn)}/100</td>
+      <td>${Math.round(c.recence_jours)} j</td><td>${c.ville}</td>
+      <td><button class="btn sm ghost" data-atrisk="${c.client_id}">Plan d'action</button></td>
+    </tr>`).join('');
+  return `
+  <div class="view-head">
+    <div><div class="eyebrow">Relation client</div><h2>Réputation &amp; rétention</h2>
+    <p>Priorisez les réclamations selon l'urgence réelle, et anticipez les départs grâce au score de risque prédictif.</p></div>
+  </div>
+  <div class="grid two">
+    <div class="panel"><h3>Motifs de réclamation</h3><p class="panel-sub">120 réclamations classifiées</p>
+      <div class="chart-wrap sm"><canvas id="chartMotifs"></canvas></div>
+    </div>
+    <div class="panel"><h3>Gravité des réclamations</h3><p class="panel-sub">Répartition par niveau</p>
+      <div class="chart-wrap sm"><canvas id="chartGravite"></canvas></div>
+    </div>
+  </div>
+  <div class="section-title">Réclamations à traiter en priorité</div>
+  <div class="panel">
+    <div style="max-height:280px;overflow-y:auto;">
+    <table><thead><tr><th>ID</th><th>Client</th><th>Motif</th><th>Gravité</th><th>Statut</th><th>Segment</th></tr></thead><tbody>${rows}</tbody></table>
+    </div>
+  </div>
+  <div class="section-title">Clients à risque élevé de départ</div>
+  <div class="panel">
+    <div style="max-height:320px;overflow-y:auto;">
+    <table><thead><tr><th>Client</th><th>Segment</th><th>Score de risque</th><th>Dernier achat</th><th>Ville</th><th></th></tr></thead><tbody>${riskRows}</tbody></table>
+    </div>
+    <div class="ai-output" id="outAtRisk"></div>
+  </div>
+  `;
+}
+
+function clientsHTML(){
+  const segs = [...new Set(DATA.clients_table.map(c=>c.segment_ia))];
+  const segOpts = segs.map(s=>`<option value="${s}">${s}</option>`).join('');
+  return `
+  <div class="view-head">
+    <div><div class="eyebrow">Base clients</div><h2>Explorateur clients</h2>
+    <p>Recherchez un client, filtrez par segment ou niveau de risque, et générez une recommandation personnalisée par IA.</p></div>
+  </div>
+  <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+    <input type="text" id="clientSearch" placeholder="Rechercher un ID client (ex: CL014)">
+    <select id="filterSeg"><option value="">Tous les segments</option>${segOpts}</select>
+    <select id="filterRisk"><option value="">Tous les niveaux de risque</option><option value="Élevé">Risque élevé</option><option value="Moyen">Risque moyen</option><option value="Faible">Risque faible</option></select>
+  </div>
+  <div class="panel">
+    <div style="max-height:420px;overflow-y:auto;">
+    <table><thead><tr><th>Client</th><th>Ville</th><th>Segment</th><th>Canal</th><th>Commandes</th><th>CA total</th><th>Satisfaction</th><th>Risque</th></tr></thead>
+    <tbody id="clientTableBody"></tbody></table>
+    </div>
+  </div>
+  <div class="client-detail" id="clientDetail"></div>
+  `;
+}
+
+function agentsHTML(){
+  return `
+  <div class="view-head">
+    <div><div class="eyebrow">Comment ça marche</div><h2>Les agents IA du tableau de bord</h2>
+    <p>Trois moteurs travaillent en continu sur vos données : un agent d'analyse de texte, un agent prédictif, et un agent conversationnel de synthèse.</p></div>
+  </div>
+  <div class="grid three">
+    <div class="agent-card">
+      <div class="tag"><span class="dot"></span>Agent NLP</div>
+      <h4 style="font-size:14px;margin-bottom:6px;">Lecture des avis &amp; réclamations</h4>
+      <p>Catégorise automatiquement le sentiment (<code>Positif / Neutre / Négatif</code>) et les thèmes de chaque commentaire client, pour transformer des centaines de messages en signaux exploitables sans lecture manuelle.</p>
+    </div>
+    <div class="agent-card">
+      <div class="tag"><span class="dot"></span>Agent prédictif</div>
+      <h4 style="font-size:14px;margin-bottom:6px;">Score de risque de churn</h4>
+      <p>Combine la récence d'achat, les réclamations non résolues et la satisfaction en un score 0-100 par client, pour agir avant le départ plutôt qu'après.</p>
+    </div>
+    <div class="agent-card">
+      <div class="tag"><span class="dot"></span>Agent générateur</div>
+      <h4 style="font-size:14px;margin-bottom:6px;">Synthèses &amp; recommandations</h4>
+      <p>Rédige, à la demande, des messages de relance, idées de campagne et synthèses exécutives ancrées dans les chiffres réels du tableau de bord.</p>
+    </div>
+  </div>
+  <div class="section-title">Poser une question à l'agent IA</div>
+  <div class="chat-box">
+    <div class="chat-log" id="chatLog"></div>
+    <div class="chat-input-row">
+      <input type="text" id="chatInput" placeholder="Ex : Quel segment devrait-on prioriser ce mois-ci ?">
+      <button class="btn" id="chatSend">Envoyer</button>
+    </div>
+    <div class="suggestions">
+      <button class="suggestion-chip" data-q="Quels sont les 3 signaux d'alerte de churn les plus importants en ce moment ?">Signaux d'alerte churn</button>
+      <button class="suggestion-chip" data-q="Quel produit devrait-on pousser en priorité ce mois-ci et pourquoi ?">Produit à pousser</button>
+      <button class="suggestion-chip" data-q="Quel canal d'acquisition est le plus rentable et lequel faut-il revoir ?">Canal le plus rentable</button>
+    </div>
+  </div>
+  <p class="foot-note">Les analyses de segmentation, de sentiment et de risque sont calculées à partir des données réelles (clients, achats, avis, réclamations). Les réponses générées par l'agent conversationnel s'appuient sur ce même résumé chiffré — elles ne remplacent pas un avis humain sur des décisions à fort enjeu.</p>
+  `;
+}
+
+/* ============ CHART INSTANTIATION ============ */
+function makeCharts(){
+  const c = chartColors();
+  const barPalette = [c.accent, c.accent2, c.accent4, c.accent3, '#8B6FD6', '#4FB6C4'];
+
+  // CA mensuel
+  new Chart(document.getElementById('chartCA'), {
+    type:'line',
+    data:{ labels: DATA.ca_mensuel.labels, datasets:[{
+      data: DATA.ca_mensuel.valeurs, borderColor:c.accent, backgroundColor:c.accent+'33',
+      fill:true, tension:.35, pointRadius:2, borderWidth:2
+    }]},
+    options:{ plugins:{legend:{display:false}}, scales:{
+      x:{ticks:{...baseTicks(), maxRotation:0, autoSkip:true, maxTicksLimit:8}, grid:{display:false}},
+      y:{ticks:{...baseTicks(), callback:v=>(v/1000000).toFixed(1)+'M'}, grid:baseGrid()}
+    }}
+  });
+
+  // Risque churn doughnut
+  const rk = DATA.risque_churn;
+  new Chart(document.getElementById('chartRisk'), {
+    type:'doughnut',
+    data:{ labels:Object.keys(rk), datasets:[{ data:Object.values(rk),
+      backgroundColor:[c.accent3, c.accent, c.accent2], borderWidth:0 }]},
+    options:{ plugins:{legend:{position:'bottom', labels:{color:c.muted, boxWidth:10, padding:14, font:{size:11.5}}}}, cutout:'62%' }
+  });
+
+  // CA par segment
+  const casegEntries = Object.entries(DATA.ca_par_segment);
+  new Chart(document.getElementById('chartCASeg'), {
+    type:'bar',
+    data:{ labels: casegEntries.map(e=>e[0]), datasets:[{ data: casegEntries.map(e=>e[1]),
+      backgroundColor: barPalette, borderRadius:4, maxBarThickness:34 }]},
+    options:{ indexAxis:'y', plugins:{legend:{display:false}}, scales:{
+      x:{ticks:{...baseTicks(), callback:v=>(v/1000000).toFixed(1)+'M'}, grid:baseGrid()},
+      y:{ticks:baseTicks(), grid:{display:false}}
+    }}
+  });
+
+  // Clients par segment
+  const clsegEntries = Object.entries(DATA.clients_par_segment);
+  new Chart(document.getElementById('chartClientSeg'), {
+    type:'pie',
+    data:{ labels: clsegEntries.map(e=>e[0]), datasets:[{ data: clsegEntries.map(e=>e[1]), backgroundColor:barPalette, borderWidth:0 }]},
+    options:{ plugins:{legend:{position:'bottom', labels:{color:c.muted, boxWidth:10, padding:10, font:{size:11}}}} }
+  });
+
+  // Top produits (marketing) — dynamic
+  window._chartTopProd = new Chart(document.getElementById('chartTopProd'), {
+    type:'bar', data:{ labels:[], datasets:[{ data:[], backgroundColor:c.accent, borderRadius:4, maxBarThickness:40 }]},
+    options:{ plugins:{legend:{display:false}}, scales:{
+      x:{ticks:baseTicks(), grid:{display:false}},
+      y:{ticks:{...baseTicks(), callback:v=>(v/1000).toFixed(0)+'k'}, grid:baseGrid()}
+    }}
+  });
+  updateTopProd(document.getElementById('segSelect').value);
+  document.getElementById('segSelect').addEventListener('change', e=>updateTopProd(e.target.value));
+
+  // Canaux
+  const canaux = DATA.performance_canaux;
+  new Chart(document.getElementById('chartCanaux'), {
+    type:'bar',
+    data:{ labels: canaux.map(x=>x.canal_acquisition), datasets:[{ label:'Satisfaction moy. (/5)', data: canaux.map(x=>x.satisfaction_moy),
+      backgroundColor:c.accent4, borderRadius:4, maxBarThickness:30 }]},
+    options:{ plugins:{legend:{display:false}}, scales:{
+      x:{ticks:{...baseTicks(), maxRotation:20, minRotation:20}, grid:{display:false}},
+      y:{min:0,max:5, ticks:baseTicks(), grid:baseGrid()}
+    }}
+  });
+
+  // Sentiment
+  const sent = DATA.sentiment_avis;
+  new Chart(document.getElementById('chartSentiment'), {
+    type:'doughnut',
+    data:{ labels:Object.keys(sent), datasets:[{ data:Object.values(sent), backgroundColor:[c.accent2, c.muted, c.accent3], borderWidth:0 }]},
+    options:{ plugins:{legend:{position:'bottom', labels:{color:c.muted, boxWidth:10, padding:12, font:{size:11.5}}}}, cutout:'55%' }
+  });
+
+  // Thèmes avis
+  const th = DATA.themes_avis;
+  new Chart(document.getElementById('chartThemes'), {
+    type:'bar',
+    data:{ labels:Object.keys(th), datasets:[{ data:Object.values(th), backgroundColor:barPalette, borderRadius:4, maxBarThickness:26 }]},
+    options:{ indexAxis:'y', plugins:{legend:{display:false}}, scales:{
+      x:{ticks:baseTicks(), grid:baseGrid()}, y:{ticks:baseTicks(), grid:{display:false}}
+    }}
+  });
+
+  // Motifs réclamations
+  const mot = DATA.motifs_reclamations;
+  new Chart(document.getElementById('chartMotifs'), {
+    type:'bar',
+    data:{ labels:Object.keys(mot), datasets:[{ data:Object.values(mot), backgroundColor: c.accent3, borderRadius:4, maxBarThickness:28 }]},
+    options:{ indexAxis:'y', plugins:{legend:{display:false}}, scales:{
+      x:{ticks:baseTicks(), grid:baseGrid()}, y:{ticks:baseTicks(), grid:{display:false}}
+    }}
+  });
+
+  // Gravité
+  const gr = DATA.gravite_reclamations;
+  new Chart(document.getElementById('chartGravite'), {
+    type:'doughnut',
+    data:{ labels:Object.keys(gr), datasets:[{ data:Object.values(gr), backgroundColor:[c.accent, c.accent3, c.accent2], borderWidth:0 }]},
+    options:{ plugins:{legend:{position:'bottom', labels:{color:c.muted, boxWidth:10, padding:12, font:{size:11.5}}}}, cutout:'55%' }
+  });
+}
+
+function updateTopProd(seg){
+  const items = DATA.top_produits_par_segment[seg] || [];
+  window._chartTopProd.data.labels = items.map(i=>i.produit);
+  window._chartTopProd.data.datasets[0].data = items.map(i=>i.ca);
+  window._chartTopProd.update();
+}
+
+/* ============ CLIENTS EXPLORER ============ */
+function renderClientTable(){
+  const search = document.getElementById('clientSearch').value.trim().toUpperCase();
+  const fSeg = document.getElementById('filterSeg').value;
+  const fRisk = document.getElementById('filterRisk').value;
+  let rows = DATA.clients_table.filter(c=>{
+    if(search && !c.client_id.includes(search)) return false;
+    if(fSeg && c.segment_ia !== fSeg) return false;
+    if(fRisk && c.niveau_risque !== fRisk) return false;
+    return true;
+  }).slice(0,150);
+  const body = document.getElementById('clientTableBody');
+  body.innerHTML = rows.map(c=>`
+    <tr data-client="${c.client_id}" style="cursor:pointer;">
+      <td><strong>${c.client_id}</strong></td><td>${c.ville}</td><td>${c.segment_ia}</td><td>${c.canal_acquisition}</td>
+      <td>${c.nb_commandes}</td><td>${fmtFCFA(c.montant_total)}</td><td>${c.satisfaction}/5</td>
+      <td><span class="pill risk-${c.niveau_risque}">${c.niveau_risque}</span></td>
+    </tr>`).join('') || '<tr><td colspan="8" style="color:var(--muted);text-align:center;padding:24px;">Aucun client ne correspond à ces filtres.</td></tr>';
+  body.querySelectorAll('tr[data-client]').forEach(tr=>{
+    tr.addEventListener('click', ()=>showClientDetail(tr.dataset.client));
+  });
+}
+
+function showClientDetail(id){
+  const c = DATA.clients_table.find(x=>x.client_id===id);
+  if(!c) return;
+  const el = document.getElementById('clientDetail');
+  el.classList.add('show');
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+      <div><h3 style="font-size:16px;">${c.client_id} — ${c.ville}</h3>
+      <p style="color:var(--muted);font-size:12px;margin-top:2px;">${c.segment_ia} · Acquis via ${c.canal_acquisition} · Produit favori : ${c.produit_favori || 'N/A'}</p></div>
+      <button class="btn" id="btnClientReco">Recommandation personnalisée IA</button>
+    </div>
+    <div class="kv">
+      <div>Commandes<strong>${c.nb_commandes}</strong></div>
+      <div>CA total<strong>${fmtFCFA(c.montant_total)}</strong></div>
+      <div>Satisfaction<strong>${c.satisfaction}/5</strong></div>
+      <div>Risque de churn<strong>${Math.round(c.risque_churn)}/100</strong></div>
+      <div>Dernier achat<strong>il y a ${Math.round(c.recence_jours)} j</strong></div>
+      <div>Âge<strong>${c.age} ans</strong></div>
+    </div>
+    <div class="ai-output" id="outClientReco"></div>
+  `;
+  document.getElementById('btnClientReco').addEventListener('click', ()=>{
+    askAgent(`Voici un client précis : ${JSON.stringify(c)}. En 4-5 lignes, propose une action commerciale concrète et personnalisée pour ce client (canal à utiliser, message clé, offre éventuelle), en te basant sur son segment et son niveau de risque.`,
+      document.getElementById('outClientReco'));
+  });
+  el.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+/* ============ WIRE UP INTERACTIONS ============ */
+function wireInteractions(){
+  document.getElementById('clientSearch').addEventListener('input', renderClientTable);
+  document.getElementById('filterSeg').addEventListener('change', renderClientTable);
+  document.getElementById('filterRisk').addEventListener('change', renderClientTable);
+  renderClientTable();
+
+  document.getElementById('btnExecSummary').addEventListener('click', ()=>{
+    askAgent("Rédige une synthèse exécutive pour le dirigeant de l'entreprise : 3 constats clés et 3 actions prioritaires à mener ce mois-ci, classées par impact business.",
+      document.getElementById('outExecSummary'));
+  });
+
+  document.getElementById('btnNewsletterIdea').addEventListener('click', ()=>{
+    const seg = document.getElementById('segSelect').value;
+    askAgent(`Propose une idée de newsletter (objet + 2 lignes de contenu) ciblant spécifiquement le segment "${seg}", en t'appuyant sur ses produits favoris et le sentiment des avis clients.`,
+      document.getElementById('outNewsletter'));
+  });
+
+  document.getElementById('main').addEventListener('click', e=>{
+    const csBtn = e.target.closest('[data-crosssell]');
+    if(csBtn){
+      const o = JSON.parse(csBtn.dataset.crosssell.replace(/&#39;/g,"'"));
+      askAgent(`Rédige un court message WhatsApp (3-4 phrases, ton chaleureux et direct) pour proposer au client ${o.client_id}, qui est un excellent client fidèle, ces produits qu'il n'a pas encore essayés : ${o.produits_suggeres.join(', ')}.`,
+        document.getElementById('outCrossSell'));
+    }
+    const arBtn = e.target.closest('[data-atrisk]');
+    if(arBtn){
+      const cid = arBtn.dataset.atrisk;
+      const c = DATA.clients_risque_eleve.find(x=>x.client_id===cid);
+      askAgent(`Ce client est à risque élevé de churn : ${JSON.stringify(c)}. Propose un plan d'action de rétention en 3 étapes concrètes pour l'équipe relation client, à mener cette semaine.`,
+        document.getElementById('outAtRisk'));
+    }
+  });
+
+  // chat
+  const chatLog = document.getElementById('chatLog');
+  function addMsg(role, text){
+    const div = document.createElement('div');
+    div.className = 'msg ' + role;
+    div.textContent = text;
+    chatLog.appendChild(div);
+    chatLog.scrollTop = chatLog.scrollHeight;
+    return div;
+  }
+  async function sendChat(q){
+    if(!q.trim()) return;
+    addMsg('user', q);
+    document.getElementById('chatInput').value = '';
+    const aiDiv = addMsg('ai', '…');
+    if(!claudeSample){
+      try {
+        if (typeof claude !== 'undefined') claudeSample = await claude.use('sample');
+      } catch(e){}
+    }
+    if(!claudeSample){ aiDiv.textContent = localAgentResponse(q); return; }
+    try{
+      const res = await claudeSample([{role:'user', content: CONTEXT_SUMMARY + "\n\nQuestion : " + q}],
+        { modelTier:'default', onText:({text})=>{ aiDiv.textContent = text; chatLog.scrollTop = chatLog.scrollHeight; } });
+      aiDiv.textContent = res.text;
+    }catch(err){ aiDiv.textContent = localAgentResponse(q); }
+  }
+  document.getElementById('chatSend').addEventListener('click', ()=>sendChat(document.getElementById('chatInput').value));
+  document.getElementById('chatInput').addEventListener('keydown', e=>{ if(e.key==='Enter') sendChat(e.target.value); });
+  document.querySelectorAll('.suggestion-chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>sendChat(chip.dataset.q));
+  });
+}
+
+wireInteractions();
+if (typeof Chart !== 'undefined') {
+  makeCharts();
+} else {
+  console.warn('Chart.js indisponible : les tableaux et la navigation restent disponibles.');
+}
+</script>
+</body>
+</html>

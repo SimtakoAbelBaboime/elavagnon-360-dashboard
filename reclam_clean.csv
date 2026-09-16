@@ -1,0 +1,121 @@
+reclamation_id,client_id,date,motif,gravite,resolution,poids_gravite
+R001,CL094,2025-09-20,Prix,Faible,Non résolue,1
+R002,CL104,2025-07-04,Qualité,Moyenne,Non résolue,2
+R003,CL128,2025-12-11,Facturation,Élevée,Non résolue,3
+R004,CL070,2026-04-14,Prix,Moyenne,Non résolue,2
+R005,CL155,2026-04-19,Produit indisponible,Élevée,En cours,3
+R006,CL038,2026-06-09,Livraison,Faible,En cours,1
+R007,CL126,2026-07-23,Qualité,Élevée,Résolue,3
+R008,CL008,2025-06-10,Facturation,Faible,Résolue,1
+R009,CL128,2025-03-28,Qualité,Moyenne,Non résolue,2
+R010,CL174,2026-01-29,Qualité,Moyenne,Non résolue,2
+R011,CL160,2025-06-07,Livraison,Élevée,Non résolue,3
+R012,CL197,2026-07-18,Produit indisponible,Faible,En cours,1
+R013,CL170,2026-07-23,Produit indisponible,Élevée,En cours,3
+R014,CL139,2026-02-15,Service client,Élevée,Résolue,3
+R015,CL196,2025-04-02,Produit indisponible,Faible,En cours,1
+R016,CL116,2026-01-17,Produit indisponible,Moyenne,En cours,2
+R017,CL010,2025-04-03,Qualité,Élevée,Non résolue,3
+R018,CL200,2026-01-05,Facturation,Faible,En cours,1
+R019,CL111,2025-07-16,Prix,Élevée,En cours,3
+R020,CL125,2025-06-21,Service client,Élevée,En cours,3
+R021,CL169,2026-09-04,Service client,Moyenne,En cours,2
+R022,CL144,2025-08-08,Service client,Faible,En cours,1
+R023,CL068,2026-07-20,Service client,Moyenne,Non résolue,2
+R024,CL174,2026-02-25,Prix,Moyenne,Résolue,2
+R025,CL008,2025-04-16,Qualité,Moyenne,En cours,2
+R026,CL190,2025-03-28,Facturation,Moyenne,En cours,2
+R027,CL025,2026-05-13,Prix,Moyenne,En cours,2
+R028,CL090,2025-04-27,Facturation,Faible,Résolue,1
+R029,CL061,2026-01-14,Service client,Faible,Non résolue,1
+R030,CL017,2026-01-07,Livraison,Moyenne,Résolue,2
+R031,CL006,2026-09-03,Prix,Faible,En cours,1
+R032,CL169,2026-05-07,Service client,Élevée,En cours,3
+R033,CL069,2025-03-21,Facturation,Moyenne,Non résolue,2
+R034,CL006,2026-01-19,Produit indisponible,Élevée,En cours,3
+R035,CL083,2025-06-09,Produit indisponible,Faible,Non résolue,1
+R036,CL173,2025-09-27,Prix,Moyenne,Non résolue,2
+R037,CL196,2026-02-11,Qualité,Élevée,En cours,3
+R038,CL094,2026-05-21,Qualité,Moyenne,Non résolue,2
+R039,CL020,2026-08-31,Qualité,Moyenne,En cours,2
+R040,CL013,2025-12-30,Service client,Moyenne,Résolue,2
+R041,CL160,2025-06-03,Facturation,Élevée,Résolue,3
+R042,CL152,2026-02-08,Prix,Faible,Non résolue,1
+R043,CL136,2026-06-30,Produit indisponible,Faible,En cours,1
+R044,CL020,2026-01-04,Service client,Moyenne,En cours,2
+R045,CL170,2026-09-04,Prix,Faible,En cours,1
+R046,CL103,2025-11-13,Service client,Élevée,En cours,3
+R047,CL172,2025-09-01,Livraison,Élevée,Non résolue,3
+R048,CL133,2025-09-08,Service client,Moyenne,Résolue,2
+R049,CL170,2026-06-22,Prix,Élevée,Non résolue,3
+R050,CL158,2026-05-19,Service client,Élevée,Non résolue,3
+R051,CL016,2026-08-17,Qualité,Moyenne,En cours,2
+R052,CL038,2025-11-02,Qualité,Élevée,Non résolue,3
+R053,CL196,2026-01-02,Produit indisponible,Moyenne,En cours,2
+R054,CL017,2025-09-25,Produit indisponible,Moyenne,En cours,2
+R055,CL166,2025-08-12,Prix,Élevée,Non résolue,3
+R056,CL061,2026-04-20,Qualité,Faible,Résolue,1
+R057,CL050,2025-03-29,Qualité,Moyenne,En cours,2
+R058,CL125,2026-05-21,Produit indisponible,Élevée,Résolue,3
+R059,CL052,2025-08-11,Prix,Faible,Résolue,1
+R060,CL067,2025-12-10,Facturation,Élevée,Résolue,3
+R061,CL165,2025-04-13,Facturation,Moyenne,Résolue,2
+R062,CL015,2025-05-25,Prix,Élevée,En cours,3
+R063,CL017,2026-04-21,Prix,Élevée,Non résolue,3
+R064,CL024,2026-04-11,Facturation,Faible,Résolue,1
+R065,CL029,2026-07-26,Livraison,Élevée,Non résolue,3
+R066,CL149,2026-08-20,Prix,Moyenne,Résolue,2
+R067,CL061,2025-07-04,Prix,Moyenne,Non résolue,2
+R068,CL189,2026-04-04,Facturation,Élevée,Résolue,3
+R069,CL109,2025-10-10,Qualité,Faible,Résolue,1
+R070,CL055,2025-12-07,Produit indisponible,Moyenne,En cours,2
+R071,CL151,2025-04-27,Produit indisponible,Élevée,En cours,3
+R072,CL180,2025-06-24,Prix,Élevée,En cours,3
+R073,CL122,2025-11-08,Prix,Faible,En cours,1
+R074,CL122,2026-03-12,Prix,Faible,Non résolue,1
+R075,CL156,2025-04-05,Facturation,Élevée,Résolue,3
+R076,CL177,2025-11-01,Prix,Élevée,En cours,3
+R077,CL080,2026-03-07,Facturation,Faible,Non résolue,1
+R078,CL061,2026-05-28,Produit indisponible,Faible,En cours,1
+R079,CL066,2026-01-03,Livraison,Faible,En cours,1
+R080,CL054,2025-08-12,Produit indisponible,Élevée,En cours,3
+R081,CL197,2026-04-21,Livraison,Moyenne,Résolue,2
+R082,CL200,2026-07-17,Produit indisponible,Élevée,En cours,3
+R083,CL086,2026-05-07,Livraison,Faible,Non résolue,1
+R084,CL067,2026-08-01,Livraison,Moyenne,En cours,2
+R085,CL155,2026-01-29,Produit indisponible,Élevée,Résolue,3
+R086,CL196,2025-04-23,Facturation,Élevée,Résolue,3
+R087,CL162,2026-05-29,Facturation,Faible,Résolue,1
+R088,CL103,2025-09-21,Facturation,Moyenne,En cours,2
+R089,CL148,2025-05-24,Livraison,Faible,Résolue,1
+R090,CL133,2025-07-12,Service client,Élevée,En cours,3
+R091,CL082,2026-06-06,Produit indisponible,Élevée,Résolue,3
+R092,CL067,2025-08-25,Facturation,Élevée,En cours,3
+R093,CL073,2025-09-20,Livraison,Moyenne,En cours,2
+R094,CL047,2026-04-07,Produit indisponible,Élevée,Résolue,3
+R095,CL006,2025-03-24,Service client,Élevée,Non résolue,3
+R096,CL161,2025-10-21,Livraison,Moyenne,Résolue,2
+R097,CL068,2025-08-20,Livraison,Moyenne,Non résolue,2
+R098,CL110,2025-11-22,Qualité,Faible,En cours,1
+R099,CL044,2025-06-29,Livraison,Élevée,Non résolue,3
+R100,CL112,2026-06-08,Facturation,Moyenne,Résolue,2
+R101,CL058,2025-09-25,Qualité,Moyenne,En cours,2
+R102,CL192,2026-07-20,Produit indisponible,Faible,En cours,1
+R103,CL053,2025-10-07,Prix,Élevée,Non résolue,3
+R104,CL049,2026-05-03,Qualité,Moyenne,Résolue,2
+R105,CL008,2025-12-23,Prix,Faible,Non résolue,1
+R106,CL116,2025-11-10,Prix,Élevée,Non résolue,3
+R107,CL166,2026-06-13,Livraison,Faible,En cours,1
+R108,CL035,2026-01-26,Facturation,Moyenne,Non résolue,2
+R109,CL055,2026-03-28,Facturation,Moyenne,Non résolue,2
+R110,CL153,2025-11-18,Livraison,Faible,Non résolue,1
+R111,CL016,2025-04-23,Prix,Faible,En cours,1
+R112,CL091,2025-04-16,Livraison,Moyenne,Non résolue,2
+R113,CL159,2026-03-26,Prix,Moyenne,Non résolue,2
+R114,CL095,2025-07-14,Service client,Faible,Non résolue,1
+R115,CL046,2025-11-22,Qualité,Élevée,En cours,3
+R116,CL087,2026-06-23,Qualité,Faible,En cours,1
+R117,CL182,2026-08-26,Produit indisponible,Faible,En cours,1
+R118,CL030,2026-01-15,Livraison,Faible,En cours,1
+R119,CL072,2026-03-05,Produit indisponible,Moyenne,En cours,2
+R120,CL157,2025-11-26,Service client,Moyenne,En cours,2

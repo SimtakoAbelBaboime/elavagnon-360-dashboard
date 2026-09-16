@@ -1,0 +1,181 @@
+avis_id,client_id,note,commentaire,sentiment,theme
+A001,CL043,3,RAS,Neutre,Autre
+A002,CL196,2,,Négatif,
+A003,CL169,4,Très bon service,Positif,Service client
+A004,CL049,2,Très bon service,Positif,Service client
+A005,CL059,2,Très bon service,Positif,Service client
+A006,CL121,3,J'adore le produit,Positif,Qualité produit
+A007,CL181,4,Bon rapport qualité-prix,Positif,Prix
+A008,CL030,4,Très bon service,Positif,Service client
+A009,CL114,3,,Neutre,
+A010,CL125,4,RAS,Positif,Autre
+A011,CL029,2,Livraison trop lente,Négatif,Livraison
+A012,CL090,1,Prix un peu élevé,Négatif,Prix
+A013,CL073,2,J'adore le produit,Positif,Qualité produit
+A014,CL192,5,Réponse rapide,Positif,Service client
+A015,CL145,5,Prix un peu élevé,Positif,Prix
+A016,CL150,1,,Négatif,
+A017,CL197,5,J'adore le produit,Positif,Qualité produit
+A018,CL107,1,Prix un peu élevé,Négatif,Prix
+A019,CL197,4,Livraison trop lente,Positif,Livraison
+A020,CL085,1,Réponse rapide,Positif,Service client
+A021,CL175,1,Bon rapport qualité-prix,Positif,Prix
+A022,CL096,5,Livraison trop lente,Positif,Livraison
+A023,CL083,2,Très bon service,Positif,Service client
+A024,CL021,4,RAS,Positif,Autre
+A025,CL117,3,Très bon service,Positif,Service client
+A026,CL085,1,RAS,Négatif,Autre
+A027,CL084,5,J'adore le produit,Positif,Qualité produit
+A028,CL055,1,Réponse rapide,Positif,Service client
+A029,CL083,1,Livraison trop lente,Négatif,Livraison
+A030,CL141,5,Bon rapport qualité-prix,Positif,Prix
+A031,CL024,4,Réponse rapide,Positif,Service client
+A032,CL046,2,Bon rapport qualité-prix,Positif,Prix
+A033,CL023,1,Prix un peu élevé,Négatif,Prix
+A034,CL042,4,Bon rapport qualité-prix,Positif,Prix
+A035,CL073,2,Livraison trop lente,Négatif,Livraison
+A036,CL077,4,Bon rapport qualité-prix,Positif,Prix
+A037,CL189,3,J'adore le produit,Positif,Qualité produit
+A038,CL092,1,Je n'ai pas reçu ma commande,Négatif,Livraison
+A039,CL132,2,RAS,Négatif,Autre
+A040,CL115,4,RAS,Positif,Autre
+A041,CL069,5,Bon rapport qualité-prix,Positif,Prix
+A042,CL024,4,Je n'ai pas reçu ma commande,Positif,Livraison
+A043,CL158,2,Bon rapport qualité-prix,Positif,Prix
+A044,CL162,4,Livraison trop lente,Positif,Livraison
+A045,CL011,5,Je n'ai pas reçu ma commande,Positif,Livraison
+A046,CL119,2,J'adore le produit,Positif,Qualité produit
+A047,CL127,5,,Positif,
+A048,CL022,3,RAS,Neutre,Autre
+A049,CL112,1,RAS,Négatif,Autre
+A050,CL077,2,J'adore le produit,Positif,Qualité produit
+A051,CL176,3,Prix un peu élevé,Négatif,Prix
+A052,CL134,4,Réponse rapide,Positif,Service client
+A053,CL146,1,,Négatif,
+A054,CL020,1,,Négatif,
+A055,CL028,5,Bon rapport qualité-prix,Positif,Prix
+A056,CL106,1,RAS,Négatif,Autre
+A057,CL170,5,Réponse rapide,Positif,Service client
+A058,CL091,3,Livraison trop lente,Négatif,Livraison
+A059,CL197,5,Très bon service,Positif,Service client
+A060,CL030,4,J'adore le produit,Positif,Qualité produit
+A061,CL047,4,Très bon service,Positif,Service client
+A062,CL022,4,Réponse rapide,Positif,Service client
+A063,CL081,5,RAS,Positif,Autre
+A064,CL194,4,Réponse rapide,Positif,Service client
+A065,CL088,2,Prix un peu élevé,Négatif,Prix
+A066,CL048,1,Réponse rapide,Positif,Service client
+A067,CL173,1,Bon rapport qualité-prix,Positif,Prix
+A068,CL137,1,Très bon service,Positif,Service client
+A069,CL102,1,Très bon service,Positif,Service client
+A070,CL044,4,RAS,Positif,Autre
+A071,CL178,4,RAS,Positif,Autre
+A072,CL078,5,Je n'ai pas reçu ma commande,Positif,Livraison
+A073,CL177,4,Réponse rapide,Positif,Service client
+A074,CL023,2,J'adore le produit,Positif,Qualité produit
+A075,CL004,2,Livraison trop lente,Négatif,Livraison
+A076,CL005,2,Très bon service,Positif,Service client
+A077,CL054,4,J'adore le produit,Positif,Qualité produit
+A078,CL167,2,Bon rapport qualité-prix,Positif,Prix
+A079,CL161,5,Prix un peu élevé,Positif,Prix
+A080,CL023,3,RAS,Neutre,Autre
+A081,CL038,4,Bon rapport qualité-prix,Positif,Prix
+A082,CL006,1,J'adore le produit,Positif,Qualité produit
+A083,CL040,4,RAS,Positif,Autre
+A084,CL121,1,RAS,Négatif,Autre
+A085,CL150,2,Prix un peu élevé,Négatif,Prix
+A086,CL076,5,Bon rapport qualité-prix,Positif,Prix
+A087,CL014,3,Très bon service,Positif,Service client
+A088,CL027,4,Bon rapport qualité-prix,Positif,Prix
+A089,CL127,5,,Positif,
+A090,CL075,1,RAS,Négatif,Autre
+A091,CL103,4,,Positif,
+A092,CL152,5,RAS,Positif,Autre
+A093,CL060,1,,Négatif,
+A094,CL005,4,Je n'ai pas reçu ma commande,Positif,Livraison
+A095,CL142,1,Réponse rapide,Positif,Service client
+A096,CL166,4,RAS,Positif,Autre
+A097,CL030,4,Je n'ai pas reçu ma commande,Positif,Livraison
+A098,CL115,4,Très bon service,Positif,Service client
+A099,CL042,3,Prix un peu élevé,Négatif,Prix
+A100,CL121,3,RAS,Neutre,Autre
+A101,CL060,5,Prix un peu élevé,Positif,Prix
+A102,CL151,3,RAS,Neutre,Autre
+A103,CL034,3,Bon rapport qualité-prix,Positif,Prix
+A104,CL107,3,RAS,Neutre,Autre
+A105,CL042,5,Prix un peu élevé,Positif,Prix
+A106,CL073,1,RAS,Négatif,Autre
+A107,CL034,2,Prix un peu élevé,Négatif,Prix
+A108,CL041,5,RAS,Positif,Autre
+A109,CL026,4,RAS,Positif,Autre
+A110,CL078,2,Prix un peu élevé,Négatif,Prix
+A111,CL143,1,Très bon service,Positif,Service client
+A112,CL092,3,Je n'ai pas reçu ma commande,Négatif,Livraison
+A113,CL174,2,J'adore le produit,Positif,Qualité produit
+A114,CL129,1,Livraison trop lente,Négatif,Livraison
+A115,CL087,4,Livraison trop lente,Positif,Livraison
+A116,CL159,2,Livraison trop lente,Négatif,Livraison
+A117,CL144,2,RAS,Négatif,Autre
+A118,CL067,3,Je n'ai pas reçu ma commande,Négatif,Livraison
+A119,CL197,1,,Négatif,
+A120,CL069,2,,Négatif,
+A121,CL155,1,Très bon service,Positif,Service client
+A122,CL113,4,Livraison trop lente,Positif,Livraison
+A123,CL028,5,Livraison trop lente,Positif,Livraison
+A124,CL144,1,,Négatif,
+A125,CL027,2,Livraison trop lente,Négatif,Livraison
+A126,CL053,3,J'adore le produit,Positif,Qualité produit
+A127,CL187,3,RAS,Neutre,Autre
+A128,CL196,5,RAS,Positif,Autre
+A129,CL188,1,J'adore le produit,Positif,Qualité produit
+A130,CL166,3,Je n'ai pas reçu ma commande,Négatif,Livraison
+A131,CL036,1,Prix un peu élevé,Négatif,Prix
+A132,CL113,4,Très bon service,Positif,Service client
+A133,CL063,4,Je n'ai pas reçu ma commande,Positif,Livraison
+A134,CL074,5,J'adore le produit,Positif,Qualité produit
+A135,CL022,3,Je n'ai pas reçu ma commande,Négatif,Livraison
+A136,CL184,4,Je n'ai pas reçu ma commande,Positif,Livraison
+A137,CL162,2,J'adore le produit,Positif,Qualité produit
+A138,CL193,5,Bon rapport qualité-prix,Positif,Prix
+A139,CL059,2,Bon rapport qualité-prix,Positif,Prix
+A140,CL106,4,RAS,Positif,Autre
+A141,CL133,3,Très bon service,Positif,Service client
+A142,CL114,2,Très bon service,Positif,Service client
+A143,CL184,5,Livraison trop lente,Positif,Livraison
+A144,CL022,3,Je n'ai pas reçu ma commande,Négatif,Livraison
+A145,CL103,2,Bon rapport qualité-prix,Positif,Prix
+A146,CL016,4,Très bon service,Positif,Service client
+A147,CL170,2,Très bon service,Positif,Service client
+A148,CL162,5,Réponse rapide,Positif,Service client
+A149,CL108,4,,Positif,
+A150,CL078,3,Je n'ai pas reçu ma commande,Négatif,Livraison
+A151,CL003,3,,Neutre,
+A152,CL157,2,Bon rapport qualité-prix,Positif,Prix
+A153,CL115,2,,Négatif,
+A154,CL160,5,RAS,Positif,Autre
+A155,CL179,3,Bon rapport qualité-prix,Positif,Prix
+A156,CL199,2,Réponse rapide,Positif,Service client
+A157,CL022,1,,Négatif,
+A158,CL086,4,J'adore le produit,Positif,Qualité produit
+A159,CL134,5,Réponse rapide,Positif,Service client
+A160,CL055,1,,Négatif,
+A161,CL142,3,,Neutre,
+A162,CL088,2,Très bon service,Positif,Service client
+A163,CL008,5,Réponse rapide,Positif,Service client
+A164,CL062,3,Bon rapport qualité-prix,Positif,Prix
+A165,CL130,1,Très bon service,Positif,Service client
+A166,CL096,3,,Neutre,
+A167,CL091,1,Très bon service,Positif,Service client
+A168,CL194,1,RAS,Négatif,Autre
+A169,CL077,5,Très bon service,Positif,Service client
+A170,CL117,3,Prix un peu élevé,Négatif,Prix
+A171,CL191,5,,Positif,
+A172,CL153,2,Je n'ai pas reçu ma commande,Négatif,Livraison
+A173,CL077,3,J'adore le produit,Positif,Qualité produit
+A174,CL183,4,,Positif,
+A175,CL189,2,Livraison trop lente,Négatif,Livraison
+A176,CL084,5,Prix un peu élevé,Positif,Prix
+A177,CL200,3,RAS,Neutre,Autre
+A178,CL026,2,Bon rapport qualité-prix,Positif,Prix
+A179,CL106,1,Livraison trop lente,Négatif,Livraison
+A180,CL016,4,J'adore le produit,Positif,Qualité produit
