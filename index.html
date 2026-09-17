@@ -281,6 +281,8 @@ select,input[type=text],input[type=file]{
 .draft-label{display:block;margin-top:12px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
 .draft-message{width:100%;min-height:92px;margin-top:6px;resize:vertical;font:inherit;font-size:13px;line-height:1.5;color:var(--ink);background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:9px 10px;}
 .copy-message{margin-top:7px;}
+.collapse-result{margin-bottom:8px;}
+.result-body.collapsed{display:none;}
 .explain-chart{margin-top:8px;}
 .chart-explanation{margin-top:8px;border-left:2px solid var(--accent-4);padding:9px 12px;background:var(--panel-2);font-size:12.5px;color:var(--ink);white-space:pre-wrap;display:none;}
 .chart-explanation.show{display:block;}
@@ -462,6 +464,7 @@ const translations = {
   'Aucun fichier importé': 'No file imported',
   'Copier le message': 'Copy message',
   'Message copié': 'Message copied'
+  ,'Effacer l\'historique': 'Clear history'
   ,'Assistant décisionnel': 'Decision assistant'
   ,'Analyse NLP': 'NLP analysis'
   ,'Avis & réclamations': 'Reviews & complaints'
@@ -594,6 +597,11 @@ function localizeGenerated(value){
     ['Segment ciblé :', 'Target segment:'],
     ['Contenu :', 'Content:'],
     ['Le chiffre d\'affaires total est de', 'Total revenue is'],
+    ["Le chiffre d'affaires atteint", 'Revenue reaches'],
+    ['des clients ont acheté dans les 90 derniers jours.', 'of customers purchased within the last 90 days.'],
+    ['La satisfaction moyenne est de', 'Average satisfaction is'],
+    ['Priorités : réduire les réclamations non résolues, réactiver les clients à risque et développer le cross-sell.', 'Priorities: reduce unresolved complaints, reactivate at-risk customers, and develop cross-selling.'],
+    ['à risque', 'at risk'],
     ['sur ', 'across '],
     ['commandes', 'orders'],
     ['clients', 'customers'],
@@ -842,12 +850,28 @@ function newsletterDraft(prompt){
 
 function renderAgentResult(outEl, response, prompt){
   const profile = profileFromPrompt(prompt);
-  outEl.textContent = localizeGenerated(response);
+  outEl.innerHTML = '';
+  const collapse = document.createElement('button');
+  collapse.className = 'btn sm ghost collapse-result';
+  collapse.type = 'button';
+  collapse.textContent = currentLanguage === 'en' ? 'Collapse' : 'Replier';
+  const body = document.createElement('div');
+  body.className = 'result-body';
+  body.textContent = localizeGenerated(response);
+  collapse.addEventListener('click', ()=>{
+    body.classList.toggle('collapsed');
+    const collapsed = body.classList.contains('collapsed');
+    collapse.textContent = collapsed
+      ? (currentLanguage === 'en' ? 'Expand' : 'Déplier')
+      : (currentLanguage === 'en' ? 'Collapse' : 'Replier');
+  });
+  outEl.appendChild(collapse);
+  outEl.appendChild(body);
   const message = localizeGenerated(draftMessage(profile, prompt) || newsletterDraft(prompt) || '');
   if (!message) return;
   const label = document.createElement('label');
   label.className = 'draft-label';
-  label.textContent = 'Message proposé, modifiable avant envoi';
+  label.textContent = currentLanguage === 'en' ? 'Suggested message, editable before sending' : 'Message proposé, modifiable avant envoi';
   const textarea = document.createElement('textarea');
   textarea.className = 'draft-message';
   textarea.value = message;
@@ -855,11 +879,11 @@ function renderAgentResult(outEl, response, prompt){
   const copy = document.createElement('button');
   copy.className = 'btn sm ghost copy-message';
   copy.type = 'button';
-  copy.textContent = 'Copier le message';
+  copy.textContent = currentLanguage === 'en' ? 'Copy message' : 'Copier le message';
   copy.addEventListener('click', async () => {
     await navigator.clipboard.writeText(textarea.value);
-    copy.textContent = 'Message copié';
-    setTimeout(() => { copy.textContent = 'Copier le message'; }, 1600);
+    copy.textContent = currentLanguage === 'en' ? 'Message copied' : 'Message copié';
+    setTimeout(() => { copy.textContent = currentLanguage === 'en' ? 'Copy message' : 'Copier le message'; }, 1600);
   });
   outEl.append(label, textarea, copy);
 }
@@ -1169,6 +1193,7 @@ function chatbotHTML(){
     <div class="chat-input-row">
       <input type="text" id="chatbotInput" placeholder="Ex : Quel segment faut-il prioriser ce mois-ci ?">
       <button class="btn" id="chatbotSend">Envoyer</button>
+      <button class="btn ghost" id="chatbotClear">Effacer l'historique</button>
     </div>
     <div class="suggestions">
       <button class="suggestion-chip" data-chatbot-q="Quel segment génère le plus de chiffre d'affaires ?">Segment le plus rentable</button>
@@ -1425,7 +1450,8 @@ function wireChatbot(){
   const log = document.getElementById('chatbotLog');
   const input = document.getElementById('chatbotInput');
   const send = document.getElementById('chatbotSend');
-  if (!log || !input || !send) return;
+  const clear = document.getElementById('chatbotClear');
+  if (!log || !input || !send || !clear) return;
   function addMessage(role, text){
     const message = document.createElement('div');
     message.className = `msg ${role}`;
@@ -1461,6 +1487,10 @@ function wireChatbot(){
     log.scrollTop = log.scrollHeight;
   }
   send.addEventListener('click', ()=>sendQuestion(input.value));
+  clear.addEventListener('click', ()=>{
+    log.innerHTML = `<div class="msg ai">${currentLanguage === 'en' ? 'History cleared. What would you like to analyze?' : "Historique effacé. Que souhaitez-vous analyser ?"}</div>`;
+    input.value = '';
+  });
   input.addEventListener('keydown', event=>{
     if(event.key === 'Enter') sendQuestion(input.value);
   });
