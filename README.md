@@ -2,6 +2,8 @@
 
 ELAVAGNON 360 is an interactive customer-intelligence dashboard for a small and medium-sized business. It combines customer profiles, purchases, reviews, complaints, segmentation, churn risk, marketing performance, cross-selling opportunities, and customer-service priorities in one browser-based interface.
 
+The platform is bilingual. Users can switch between French and English with the language button in the sidebar. The selected language is stored in the browser and restored on the next visit.
+
 ## Main features
 
 ### Dashboard views

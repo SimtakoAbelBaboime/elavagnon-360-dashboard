@@ -153,6 +153,8 @@ h1,h2,h3,h4{font-family:var(--font-display);margin:0;color:var(--ink);}
   border-radius:20px;
 }
 .theme-toggle:hover{color:var(--ink);border-color:var(--accent);}
+.language-toggle{all:unset;cursor:pointer;font-size:11.5px;color:var(--muted);border:1px solid var(--border);padding:6px 10px;border-radius:20px;}
+.language-toggle:hover{color:var(--ink);border-color:var(--accent);}
 .roleflag{font-size:11px;color:var(--muted);}
 
 /* ============ MAIN ============ */
@@ -360,6 +362,7 @@ select,input[type=text],input[type=file]{
     </nav>
     <div class="sidebar-foot">
       <span class="roleflag" id="dateRef"></span>
+      <button class="language-toggle" id="languageToggle" aria-label="Change language">EN</button>
       <button class="theme-toggle" id="themeToggle">Mode sombre</button>
     </div>
   </aside>
@@ -377,13 +380,108 @@ try {
 } catch(e) {}
 const fmtFCFA = n => Math.round(n).toLocaleString('fr-FR') + ' FCFA';
 const fmtNum = n => Number(n).toLocaleString('fr-FR');
+let currentLanguage = localStorage.getItem('elavagnon-language') || 'fr';
+const translations = {
+  "Pilotage client augmenté par l'IA": 'AI-powered customer management',
+  "CA mensuel, janvier 2025 – septembre 2026": 'Monthly revenue, January 2025 – September 2026',
+  'Score IA combinant récence, réclamations et satisfaction': 'AI score combining recency, complaints, and satisfaction',
+  "Où se trouve la valeur client aujourd'hui": 'Where customer value is concentrated today',
+  'Répartition de la base (200 clients)': 'Distribution of the customer base (200 customers)',
+  'Agent IA — synthèse dirigeante': 'AI assistant — executive summary',
+  "Demandez à l'agent un résumé exécutif : priorités, segments à surveiller, actions à plus fort impact sur le ROI.": 'Ask the assistant for an executive summary: priorities, segments to monitor, and highest-impact actions for ROI.',
+  'FCFA sur 500 commandes': 'FCFA across 500 orders',
+  'Pilotage': 'Management',
+  'Marketing': 'Marketing',
+  'Commercial': 'Sales',
+  "Vue d'ensemble": 'Overview',
+  'Relation client': 'Customer service',
+  'Données & IA': 'Data & AI',
+  'Clients (200)': 'Customers (200)',
+  'Chatbot IA': 'AI Chatbot',
+  'Importer des données': 'Import data',
+  'Mode sombre': 'Dark mode',
+  'Mode clair': 'Light mode',
+  'Données au 04/09/2026': 'Data as of 04/09/2026',
+  'Dirigeants': 'Executives',
+  "Vue d'ensemble": 'Overview',
+  "Santé globale de la relation client, chiffre d'affaires et risque de churn — pour arbitrer vos priorités en un coup d'œil.": 'Overall customer health, revenue, and churn risk to help prioritize decisions at a glance.',
+  "Chiffre d'affaires": 'Revenue',
+  'Panier moyen': 'Average order value',
+  'Clients actifs (90j)': 'Active customers (90 days)',
+  'Satisfaction moyenne': 'Average satisfaction',
+  'Réclamations non résolues': 'Unresolved complaints',
+  'par commande': 'per order',
+  'ont acheté récemment': 'purchased recently',
+  'tous canaux confondus': 'across all channels',
+  "du volume total": 'of total volume',
+  "Évolution du chiffre d'affaires": 'Revenue trend',
+  'Répartition du risque de churn': 'Churn-risk distribution',
+  'Chiffre d’affaires par segment': 'Revenue by segment',
+  "Chiffre d'affaires par segment": 'Revenue by segment',
+  'Clients par segment': 'Customers by segment',
+  'Expliquer ce graphique': 'Explain this chart',
+  'Masquer l’explication': 'Hide explanation',
+  'Générer la synthèse': 'Generate summary',
+  "Pilotage de l'offre": 'Offer management',
+  'Produits stars par segment': 'Top products by segment',
+  "Performance des canaux d'acquisition": 'Acquisition-channel performance',
+  'Sentiment des avis clients (NLP)': 'Customer-review sentiment (NLP)',
+  'Thèmes récurrents des avis': 'Recurring review themes',
+  'Générer une idée de newsletter pour ce segment': 'Generate a newsletter idea for this segment',
+  'Opportunités de vente': 'Sales opportunities',
+  'Message de vente': 'Sales message',
+  'Centre de traitement': 'Service center',
+  'Réclamations à traiter en priorité': 'Priority complaints',
+  'File de rétention prioritaire': 'Priority retention queue',
+  'Profils & segmentation': 'Profiles & segmentation',
+  'Chatbot IA ELAVAGNON': 'ELAVAGNON AI Chatbot',
+  'Poser une question au chatbot': 'Ask the chatbot a question',
+  'Envoyer': 'Send',
+  'Segment le plus rentable': 'Most profitable segment',
+  'Clients à recontacter': 'Customers to contact',
+  'Produit à pousser': 'Product to promote',
+  'Avis clients': 'Customer reviews',
+  'Équipe connaissance client': 'Customer knowledge team',
+  'Équipe commerciale': 'Sales team',
+  'Équipe expérience client': 'Customer experience team',
+  'Équipe relation client': 'Customer service team',
+  'Dashboard agrégé': 'Aggregated dashboard',
+  'Aucun fichier importé': 'No file imported',
+  'Copier le message': 'Copy message',
+  'Message copié': 'Message copied'
+};
+function translateNodeText(node, dictionary){
+  if(node.nodeType === Node.TEXT_NODE){
+    const trimmed = node.nodeValue.trim();
+    if(dictionary[trimmed]) node.nodeValue = node.nodeValue.replace(trimmed, dictionary[trimmed]);
+  } else if(node.nodeType === Node.ELEMENT_NODE){
+    node.childNodes.forEach(child=>translateNodeText(child, dictionary));
+  }
+}
+function applyLanguage(){
+  const dictionary = currentLanguage === 'en' ? translations : Object.fromEntries(Object.entries(translations).map(([fr,en])=>[en,fr]));
+  translateNodeText(document.body, dictionary);
+  document.querySelectorAll('input[placeholder]').forEach(input=>{
+    if(currentLanguage === 'en'){
+      input.dataset.originalPlaceholder ||= input.placeholder;
+      input.placeholder = input.placeholder.includes('Rechercher') ? 'Search a customer ID (e.g. CL014)' : input.placeholder.includes('segment') ? 'e.g. Which segment should we prioritize this month?' : input.placeholder;
+    } else if(input.dataset.originalPlaceholder) input.placeholder = input.dataset.originalPlaceholder;
+  });
+  document.documentElement.lang = currentLanguage;
+  const languageToggle = document.getElementById('languageToggle');
+  languageToggle.textContent = currentLanguage === 'en' ? 'FR' : 'EN';
+  languageToggle.setAttribute('aria-label', currentLanguage === 'en' ? 'Changer de langue' : 'Change language');
+  localStorage.setItem('elavagnon-language', currentLanguage);
+}
 
 /* ============ THEME ============ */
 const themeBtn = document.getElementById('themeToggle');
 function applyTheme(t){
   if(t){ document.documentElement.setAttribute('data-theme', t); }
   else { document.documentElement.removeAttribute('data-theme'); }
-  themeBtn.textContent = (t==='dark') ? 'Mode clair' : 'Mode sombre';
+  themeBtn.textContent = (t==='dark')
+    ? (currentLanguage === 'en' ? 'Light mode' : 'Mode clair')
+    : (currentLanguage === 'en' ? 'Dark mode' : 'Mode sombre');
 }
 applyTheme(null);
 themeBtn.addEventListener('click', ()=>{
@@ -1239,42 +1337,15 @@ function wireInteractions(){
     }
   });
 
-  // chat
-  const chatLog = document.getElementById('chatLog');
-  if (!chatLog) return;
-  function addMsg(role, text){
-    const div = document.createElement('div');
-    div.className = 'msg ' + role;
-    div.textContent = text;
-    chatLog.appendChild(div);
-    chatLog.scrollTop = chatLog.scrollHeight;
-    return div;
-  }
-  async function sendChat(q){
-    if(!q.trim()) return;
-    addMsg('user', q);
-    document.getElementById('chatInput').value = '';
-    const aiDiv = addMsg('ai', '…');
-    if(!claudeSample){
-      try {
-        if (typeof claude !== 'undefined') claudeSample = await claude.use('sample');
-      } catch(e){}
-    }
-    if(!claudeSample){ aiDiv.textContent = localAgentResponse(q); return; }
-    try{
-      const res = await claudeSample([{role:'user', content: CONTEXT_SUMMARY + "\n\nQuestion : " + q}],
-        { modelTier:'default', onText:({text})=>{ aiDiv.textContent = text; chatLog.scrollTop = chatLog.scrollHeight; } });
-      aiDiv.textContent = res.text;
-    }catch(err){ aiDiv.textContent = localAgentResponse(q); }
-  }
-  document.getElementById('chatSend').addEventListener('click', ()=>sendChat(document.getElementById('chatInput').value));
-  document.getElementById('chatInput').addEventListener('keydown', e=>{ if(e.key==='Enter') sendChat(e.target.value); });
-  chatLog.parentElement.querySelectorAll('.suggestion-chip').forEach(chip=>{
-    chip.addEventListener('click', ()=>sendChat(chip.dataset.q));
-  });
 }
 
 wireInteractions();
+document.getElementById('languageToggle').addEventListener('click', ()=>{
+  currentLanguage = currentLanguage === 'fr' ? 'en' : 'fr';
+  applyLanguage();
+  applyTheme(document.documentElement.getAttribute('data-theme'));
+});
+applyLanguage();
 if (typeof Chart !== 'undefined') {
   makeCharts();
 } else {
