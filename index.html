@@ -281,8 +281,6 @@ select,input[type=text],input[type=file]{
 .draft-label{display:block;margin-top:12px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
 .draft-message{width:100%;min-height:92px;margin-top:6px;resize:vertical;font:inherit;font-size:13px;line-height:1.5;color:var(--ink);background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:9px 10px;}
 .copy-message{margin-top:7px;}
-.collapse-result{margin-bottom:8px;}
-.result-body.collapsed{display:none;}
 .explain-chart{margin-top:8px;}
 .chart-explanation{margin-top:8px;border-left:2px solid var(--accent-4);padding:9px 12px;background:var(--panel-2);font-size:12.5px;color:var(--ink);white-space:pre-wrap;display:none;}
 .chart-explanation.show{display:block;}
@@ -851,22 +849,7 @@ function newsletterDraft(prompt){
 function renderAgentResult(outEl, response, prompt){
   const profile = profileFromPrompt(prompt);
   outEl.innerHTML = '';
-  const collapse = document.createElement('button');
-  collapse.className = 'btn sm ghost collapse-result';
-  collapse.type = 'button';
-  collapse.textContent = currentLanguage === 'en' ? 'Collapse' : 'Replier';
-  const body = document.createElement('div');
-  body.className = 'result-body';
-  body.textContent = localizeGenerated(response);
-  collapse.addEventListener('click', ()=>{
-    body.classList.toggle('collapsed');
-    const collapsed = body.classList.contains('collapsed');
-    collapse.textContent = collapsed
-      ? (currentLanguage === 'en' ? 'Expand' : 'Déplier')
-      : (currentLanguage === 'en' ? 'Collapse' : 'Replier');
-  });
-  outEl.appendChild(collapse);
-  outEl.appendChild(body);
+  outEl.textContent = localizeGenerated(response);
   const message = localizeGenerated(draftMessage(profile, prompt) || newsletterDraft(prompt) || '');
   if (!message) return;
   const label = document.createElement('label');
@@ -886,6 +869,17 @@ function renderAgentResult(outEl, response, prompt){
     setTimeout(() => { copy.textContent = currentLanguage === 'en' ? 'Copy message' : 'Copier le message'; }, 1600);
   });
   outEl.append(label, textarea, copy);
+}
+
+function toggleAgentOutput(button, prompt, outEl, hideLabel){
+  if(outEl.classList.contains('show')){
+    outEl.classList.remove('show');
+    button.textContent = button.dataset.defaultLabel;
+    return;
+  }
+  button.dataset.defaultLabel ||= button.textContent;
+  button.textContent = hideLabel;
+  askAgent(prompt, outEl);
 }
 
 async function askAgent(prompt, outEl, opts={}){
@@ -1439,9 +1433,9 @@ function showClientDetail(id){
     </div>
     <div class="ai-output" id="outClientReco"></div>
   `;
-  document.getElementById('btnClientReco').addEventListener('click', ()=>{
-    askAgent(`Voici un client précis : ${JSON.stringify(c)}. En 4-5 lignes, propose une action commerciale concrète et personnalisée pour ce client (canal à utiliser, message clé, offre éventuelle), en te basant sur son segment et son niveau de risque.`,
-      document.getElementById('outClientReco'));
+  document.getElementById('btnClientReco').addEventListener('click', event=>{
+    toggleAgentOutput(event.currentTarget, `Voici un client précis : ${JSON.stringify(c)}. En 4-5 lignes, propose une action commerciale concrète et personnalisée pour ce client (canal à utiliser, message clé, offre éventuelle), en te basant sur son segment et son niveau de risque.`,
+      document.getElementById('outClientReco'), currentLanguage === 'en' ? 'Hide recommendation' : 'Masquer la recommandation');
   });
   el.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
@@ -1512,15 +1506,15 @@ function wireInteractions(){
   document.getElementById('filterRisk').addEventListener('change', renderClientTable);
   renderClientTable();
 
-  document.getElementById('btnExecSummary').addEventListener('click', ()=>{
-    askAgent("Rédige une synthèse exécutive pour le dirigeant de l'entreprise : 3 constats clés et 3 actions prioritaires à mener ce mois-ci, classées par impact business.",
-      document.getElementById('outExecSummary'));
+  document.getElementById('btnExecSummary').addEventListener('click', event=>{
+    toggleAgentOutput(event.currentTarget, "Rédige une synthèse exécutive pour le dirigeant de l'entreprise : 3 constats clés et 3 actions prioritaires à mener ce mois-ci, classées par impact business.",
+      document.getElementById('outExecSummary'), currentLanguage === 'en' ? 'Hide summary' : 'Masquer la synthèse');
   });
 
-  document.getElementById('btnNewsletterIdea').addEventListener('click', ()=>{
+  document.getElementById('btnNewsletterIdea').addEventListener('click', event=>{
     const seg = document.getElementById('segSelect').value;
-    askAgent(`Propose une idée de newsletter (objet + 2 lignes de contenu) ciblant spécifiquement le segment "${seg}", en t'appuyant sur ses produits favoris et le sentiment des avis clients.`,
-      document.getElementById('outNewsletter'));
+    toggleAgentOutput(event.currentTarget, `Propose une idée de newsletter (objet + 2 lignes de contenu) ciblant spécifiquement le segment "${seg}", en t'appuyant sur ses produits favoris et le sentiment des avis clients.`,
+      document.getElementById('outNewsletter'), currentLanguage === 'en' ? 'Hide newsletter' : 'Masquer la newsletter');
   });
 
   document.getElementById('main').addEventListener('click', e=>{
@@ -1529,15 +1523,15 @@ function wireInteractions(){
       const o = JSON.parse(csBtn.dataset.crosssell.replace(/&#39;/g,"'"));
       const client = DATA.clients_table.find(c=>c.client_id===o.client_id) || {};
       const salesProfile = {...client, ...o};
-      askAgent(`Rédige un court message WhatsApp (3-4 phrases, ton chaleureux et élégant) pour proposer ces produits au client. Profil client : ${JSON.stringify(salesProfile)}. Produits à présenter : ${o.produits_suggeres.join(', ')}.`,
-        document.getElementById('outCrossSell'));
+      toggleAgentOutput(csBtn, `Rédige un court message WhatsApp (3-4 phrases, ton chaleureux et élégant) pour proposer ces produits au client. Profil client : ${JSON.stringify(salesProfile)}. Produits à présenter : ${o.produits_suggeres.join(', ')}.`,
+        document.getElementById('outCrossSell'), currentLanguage === 'en' ? 'Hide sales message' : 'Masquer le message de vente');
     }
     const arBtn = e.target.closest('[data-atrisk]');
     if(arBtn){
       const cid = arBtn.dataset.atrisk;
       const c = DATA.clients_risque_eleve.find(x=>x.client_id===cid);
-      askAgent(`Ce client est à risque élevé de churn : ${JSON.stringify(c)}. Propose un plan d'action de rétention en 3 étapes concrètes pour l'équipe relation client, à mener cette semaine.`,
-        document.getElementById('outAtRisk'));
+      toggleAgentOutput(arBtn, `Ce client est à risque élevé de churn : ${JSON.stringify(c)}. Propose un plan d'action de rétention en 3 étapes concrètes pour l'équipe relation client, à mener cette semaine.`,
+        document.getElementById('outAtRisk'), currentLanguage === 'en' ? 'Hide action plan' : "Masquer le plan d'action");
     }
   });
 
