@@ -393,6 +393,19 @@ const translations = {
   'Pilotage': 'Management',
   'Marketing': 'Marketing',
   'Commercial': 'Sales',
+  'Assistant décisionnel': 'Decision assistant',
+  'Analyse NLP': 'NLP analysis',
+  'Avis & réclamations': 'Reviews & complaints',
+  'Analyse prédictive': 'Predictive analysis',
+  'Risque de churn': 'Churn risk',
+  'Assistant génératif': 'Generative assistant',
+  'Réponses & messages': 'Answers & messages',
+  'Poser une question au chatbot': 'Ask the chatbot a question',
+  'Identifie le sentiment et les thèmes récurrents pour transformer les retours clients en actions concrètes.': 'Identifies sentiment and recurring themes to turn customer feedback into concrete actions.',
+  'Combine récence, satisfaction et réclamations pour aider les équipes à prioriser les relances.': 'Combines recency, satisfaction, and complaints to help teams prioritize follow-ups.',
+  'Explique les graphiques, propose des actions et rédige des brouillons de messages ou de newsletters.': 'Explains charts, suggests actions, and drafts messages or newsletters.',
+  'Bonjour. Je peux vous aider à comprendre vos résultats et à choisir une action concrète. Que souhaitez-vous analyser ?': 'Hello. I can help you understand your results and choose a concrete action. What would you like to analyze?',
+  "Posez une question en langage naturel sur vos clients, vos ventes, vos produits ou vos priorités. Les réponses s'appuient sur les données du dashboard.": 'Ask a natural-language question about your customers, sales, products, or priorities. Answers are based on dashboard data.',
   "Vue d'ensemble": 'Overview',
   'Relation client': 'Customer service',
   'Données & IA': 'Data & AI',
@@ -449,6 +462,19 @@ const translations = {
   'Aucun fichier importé': 'No file imported',
   'Copier le message': 'Copy message',
   'Message copié': 'Message copied'
+  ,'Assistant décisionnel': 'Decision assistant'
+  ,'Analyse NLP': 'NLP analysis'
+  ,'Avis & réclamations': 'Reviews & complaints'
+  ,'Analyse prédictive': 'Predictive analysis'
+  ,'Risque de churn': 'Churn risk'
+  ,'Assistant génératif': 'Generative assistant'
+  ,'Réponses & messages': 'Answers & messages'
+  ,'Poser une question au chatbot': 'Ask the chatbot a question'
+  ,'À savoir :': 'Please note:'
+  ,"le chatbot peut répondre avec le mode IA hébergé lorsqu'il est disponible. Sinon, il utilise automatiquement une analyse locale basée sur les chiffres actuellement chargés dans le dashboard.": 'The chatbot uses hosted AI when available. Otherwise, it automatically uses local analysis based on the currently loaded dashboard data.'
+  ,'Chaque équipe peut déposer ses fichiers. Les CSV sont contrôlés et conservés pour le prochain traitement; le fichier JSON agrégé actualise directement le dashboard.': 'Each team can upload files. CSV files are checked and stored for processing; the aggregate JSON directly updates the dashboard.'
+  ,'Aperçu du dernier fichier': 'Latest file preview'
+  ,'Les colonnes et les premières lignes apparaîtront ici après sélection.': 'Columns and first rows will appear here after selection.'
 };
 function translateNodeText(node, dictionary){
   if(node.nodeType === Node.TEXT_NODE){
@@ -467,11 +493,149 @@ function applyLanguage(){
       input.placeholder = input.placeholder.includes('Rechercher') ? 'Search a customer ID (e.g. CL014)' : input.placeholder.includes('segment') ? 'e.g. Which segment should we prioritize this month?' : input.placeholder;
     } else if(input.dataset.originalPlaceholder) input.placeholder = input.dataset.originalPlaceholder;
   });
+  document.querySelectorAll('[data-chatbot-q]').forEach(button=>{
+    if(currentLanguage === 'en'){
+      button.dataset.originalQuestion ||= button.dataset.chatbotQ;
+      const questions = {
+        "Quel segment génère le plus de chiffre d'affaires ?": 'Which segment generates the most revenue?',
+        'Quels clients dois-je recontacter en priorité ?': 'Which customers should I contact first?',
+        'Quel produit devrait-on pousser ce mois-ci ?': 'Which product should we promote this month?',
+        'Que révèlent les avis clients ?': 'What do customer reviews reveal?'
+      };
+      button.dataset.chatbotQ = questions[button.dataset.originalQuestion] || button.dataset.chatbotQ;
+    } else if(button.dataset.originalQuestion) button.dataset.chatbotQ = button.dataset.originalQuestion;
+  });
   document.documentElement.lang = currentLanguage;
   const languageToggle = document.getElementById('languageToggle');
   languageToggle.textContent = currentLanguage === 'en' ? 'FR' : 'EN';
   languageToggle.setAttribute('aria-label', currentLanguage === 'en' ? 'Changer de langue' : 'Change language');
   localStorage.setItem('elavagnon-language', currentLanguage);
+}
+const dataTranslations = {
+  'Régulier':'Regular',
+  'Dormant':'Dormant',
+  'Explorateur à risque':'At-risk explorer',
+  'Acheteur Opportuniste':'Opportunistic buyer',
+  'Prospect / Jamais acheté':'Prospect / Never purchased',
+  'Brand Lover':'Brand Lover',
+  'Élevé':'High',
+  'Moyen':'Medium',
+  'Faible':'Low',
+  'Positif':'Positive',
+  'Négatif':'Negative',
+  'Neutre':'Neutral',
+  'Élevée':'High',
+  'Moyenne':'Medium',
+  'Livraison':'Delivery',
+  'Prix':'Price',
+  'Qualité produit':'Product quality',
+  'Service client':'Customer service',
+  'Autre':'Other',
+  'Produit indisponible':'Product unavailable',
+  'Facturation':'Billing',
+  'Qualité':'Quality',
+  'Boutique':'Store',
+  'Référence':'Referral'
+};
+function dataLabel(value){
+  return currentLanguage === 'en' ? (dataTranslations[value] || value) : value;
+}
+function localizeGenerated(value){
+  if(currentLanguage !== 'en') return value;
+  let text = String(value);
+  const phrases = [
+    ['Ce graphique montre l\'évolution du chiffre d\'affaires mois par mois.', 'This chart shows the month-by-month revenue trend.'],
+    ['Le niveau le plus élevé apparaît en', 'The highest level appears in'],
+    ['À retenir :', 'Key takeaway:'],
+    ['repérez les mois forts pour planifier les campagnes et les mois faibles pour préparer une relance.', 'use strong months to plan campaigns and weaker months to prepare follow-ups.'],
+    ['Ce graphique répartit les', 'This chart distributes the'],
+    ['clients selon leur risque de départ.', 'customers by their churn risk.'],
+    ['clients sont à risque élevé', 'customers are high risk'],
+    ['à risque moyen', 'medium risk'],
+    ['à risque faible', 'low risk'],
+    ['commencez par les profils élevés et traitez leurs réclamations avant de proposer une offre.', 'start with high-risk profiles and resolve their complaints before proposing an offer.'],
+    ['Ce graphique compare le chiffre d\'affaires par segment.', 'This chart compares revenue by segment.'],
+    ['arrive en tête avec', 'leads with'],
+    ['adaptez les investissements marketing à la valeur de chaque segment, sans négliger la réactivation des segments dormants.', 'adapt marketing investment to each segment\'s value while reactivating dormant segments.'],
+    ['Ce graphique montre la taille de chaque segment, et non leur chiffre d\'affaires.', 'This chart shows the size of each segment, not its revenue.'],
+    ['Le segment le plus nombreux est', 'The largest segment is'],
+    ["un segment nombreux n'est pas forcément le plus rentable ; comparez-le avec le graphique de CA par segment.", 'a large segment is not necessarily the most profitable; compare it with the revenue-by-segment chart.'],
+    ['Ce graphique présente les produits les plus performants pour le segment sélectionné.', 'This chart shows the best-performing products for the selected segment.'],
+    ['Le meilleur produit dans l\'ensemble des segments est', 'The best product across segments is'],
+    ['cumulés dans les résultats affichés.', 'in the displayed results.'],
+    ['choisissez un produit déjà apprécié avant de construire une campagne.', 'choose a product that is already popular before building a campaign.'],
+    ['Ce graphique compare la satisfaction moyenne selon le canal d\'acquisition.', 'This chart compares average satisfaction by acquisition channel.'],
+    ['Le canal au CA moyen le plus élevé est', 'The channel with the highest average revenue is'],
+    ['par client.', 'per customer.'],
+    ['combinez rentabilité et satisfaction avant d\'augmenter un budget.', 'balance profitability and satisfaction before increasing a budget.'],
+    ['Ce graphique résume le ton des', 'This chart summarizes the tone of'],
+    ['avis. Les avis positifs sont majoritaires', 'reviews. Positive reviews are the majority'],
+    ['avis négatifs nécessitent un suivi.', 'negative reviews require follow-up.'],
+    ['utilisez les retours négatifs pour améliorer l\'expérience, pas seulement pour mesurer la satisfaction.', 'use negative feedback to improve the experience, not only to measure satisfaction.'],
+    ['Ce graphique regroupe les sujets mentionnés dans les avis.', 'This chart groups the topics mentioned in reviews.'],
+    ['Le thème le plus fréquent est', 'The most frequent theme is'],
+    ['mentions.', 'mentions.'],
+    ['transformez ce thème prioritaire en action concrète dans le parcours client.', 'turn this priority theme into a concrete action in the customer journey.'],
+    ['Ce graphique classe les motifs de réclamation.', 'This chart ranks complaint reasons.'],
+    ['est le motif le plus fréquent avec', 'is the most frequent reason with'],
+    ['cas.', 'cases.'],
+    ['traitez sa cause racine et mesurez chaque semaine la baisse des nouvelles réclamations.', 'address its root cause and measure the weekly decrease in new complaints.'],
+    ['Ce graphique montre la gravité des réclamations.', 'This chart shows complaint severity.'],
+    ['réclamations sont élevées', 'complaints are high severity'],
+    ['moyennes et', 'medium severity and'],
+    ['faibles.', 'low severity.'],
+    ['priorisez les cas élevés, puis confirmez personnellement leur résolution.', 'prioritize high-severity cases, then personally confirm their resolution.'],
+    ['Bonjour,', 'Hello,'],
+    ['Nous espérons que', 'We hope that'],
+    ['Votre avis nous est précieux', 'Your feedback is valuable to us'],
+    ['Bien cordialement,', 'Kind regards,'],
+    ["L'équipe ELAVAGNON", 'The ELAVAGNON team'],
+    ['Objet :', 'Subject:'],
+    ['Segment ciblé :', 'Target segment:'],
+    ['Contenu :', 'Content:'],
+    ['Le chiffre d\'affaires total est de', 'Total revenue is'],
+    ['sur ', 'across '],
+    ['commandes', 'orders'],
+    ['clients', 'customers'],
+    ['avis', 'reviews'],
+    ['réclamations', 'complaints'],
+    ['réclamation', 'complaint'],
+    ['produits', 'products'],
+    ['segment ciblé', 'target segment'],
+    ['Le panier moyen est de', 'Average order value is'],
+    ['Le segment qui contribue le plus est', 'The highest-contributing segment is'],
+    ['Action :', 'Action:'],
+    ['protéger ce segment tout en réactivant les segments à risque.', 'protect this segment while reactivating at-risk segments.'],
+    ['avec environ', 'with approximately'],
+    ['avec ', 'with '],
+    ['Découvrez', 'Discover'],
+    ['les incontournables du moment.', 'the highlights of the moment.'],
+    ['présentez ces offres avec un bénéfice concret et un appel à l\'action simple.', 'present these offers with a concrete benefit and a clear call to action.'],
+    ['Appuyez le message par une relance personnalisée selon l\'historique d\'achat.', 'Support the message with a follow-up based on purchase history.'],
+    ['réduire les réclamations non résolues, réactiver les clients à risque et développer le cross-sell.', 'reduce unresolved complaints, reactivate at-risk customers, and develop cross-selling.'],
+    ['tous les canaux', 'all channels'],
+    ['Les avis positifs sont majoritaires', 'Positive reviews are the majority'],
+    ['réclamations non résolues', 'unresolved complaints'],
+    ['proposer une offre liée à son segment et à ses achats précédents.', 'offer something related to the customer segment and previous purchases.'],
+    ['Contactez le client par WhatsApp avec un message court et personnalisé.', 'Contact the customer on WhatsApp with a short, personalized message.'],
+    ['Mettez en avant les produits recommandés selon son historique.', 'Highlight products recommended from the customer history.'],
+    ['Proposez une offre découverte limitée dans le temps.', 'Offer a time-limited introductory deal.'],
+    ['Message conseillé :', 'Recommended message:'],
+    ['Canal :', 'Channel:'],
+    ['Offre :', 'Offer:'],
+    ['proposition personnalisée plutôt qu\'une promotion générique.', 'personalized proposal rather than a generic promotion.'],
+    ['Relancez sous 3 jours si le message reste sans réponse.', 'Follow up within 3 days if there is no response.'],
+    ['Priorité', 'Priority'],
+    ['pour', 'for'],
+    ['dernier achat il y a', 'last purchase was'],
+    ['jours', 'days ago'],
+    ['Satisfaction actuelle', 'Current satisfaction'],
+    ['Proposition :', 'Proposal:'],
+    ['Objectif cette semaine : obtenir une réponse et programmer un prochain achat.', 'This week\'s goal: get a response and schedule the next purchase.']
+  ];
+  phrases.forEach(([from,to])=>{ text = text.split(from).join(to); });
+  Object.entries(dataTranslations).forEach(([from,to])=>{ text = text.split(from).join(to); });
+  return text;
 }
 
 /* ============ THEME ============ */
@@ -510,10 +674,20 @@ Voici un résumé chiffré de la base de 200 clients (analyse au 04/09/2026) :
 - Sentiment des avis clients (NLP) : ${JSON.stringify(DATA.sentiment_avis)}. Thèmes récurrents : ${JSON.stringify(DATA.themes_avis)}.
 - Motifs de réclamations : ${JSON.stringify(DATA.motifs_reclamations)}. Gravité : ${JSON.stringify(DATA.gravite_reclamations)}.
 - ${DATA.nb_opportunites_cross_sell} opportunités de vente croisée identifiées chez les "Brand Lovers".
-Réponds toujours en français, de façon concise (5-8 lignes maximum), concrète et orientée action pour une PME. Appuie-toi uniquement sur les chiffres fournis, ne les invente pas. Structure ta réponse avec des tirets si utile.`;
+Réponds dans la langue active de la plateforme (${currentLanguage === 'en' ? 'anglais' : 'français'}), de façon concise (5-8 lignes maximum), concrète et orientée action pour une PME. Appuie-toi uniquement sur les chiffres fournis, ne les invente pas. Structure ta réponse avec des tirets si utile.`;
 
 function localAgentResponse(prompt){
-  const text = prompt.toLowerCase();
+  const text = prompt.toLowerCase()
+    .replace(/revenue|sales|turnover/g, ' chiffre ')
+    .replace(/product|offer/g, ' produit ')
+    .replace(/channel|acquisition/g, ' canal ')
+    .replace(/satisfaction|reviews|feedback/g, ' satisfaction ')
+    .replace(/complaint|complaints/g, ' réclamation ')
+    .replace(/churn|risk/g, ' risque ')
+    .replace(/chart|graph/g, ' graphique ')
+    .replace(/explain|explanation/g, ' expliquer ')
+    .replace(/retention/g, ' rétention ')
+    .replace(/priority|prioritize/g, ' priorité ');
   const jsonMatch = prompt.match(/\{[\s\S]*\}/);
   let profile = null;
   if (jsonMatch) {
@@ -668,8 +842,8 @@ function newsletterDraft(prompt){
 
 function renderAgentResult(outEl, response, prompt){
   const profile = profileFromPrompt(prompt);
-  outEl.textContent = response;
-  const message = draftMessage(profile, prompt) || newsletterDraft(prompt);
+  outEl.textContent = localizeGenerated(response);
+  const message = localizeGenerated(draftMessage(profile, prompt) || newsletterDraft(prompt) || '');
   if (!message) return;
   const label = document.createElement('label');
   label.className = 'draft-label';
@@ -1029,7 +1203,7 @@ function makeCharts(){
   const rk = DATA.risque_churn;
   new Chart(document.getElementById('chartRisk'), {
     type:'doughnut',
-    data:{ labels:Object.keys(rk), datasets:[{ data:Object.values(rk),
+    data:{ labels:Object.keys(rk).map(dataLabel), datasets:[{ data:Object.values(rk),
       backgroundColor:Object.keys(rk).map(label=>categoryColor(label, riskColors)), borderWidth:0 }]},
     options:{ plugins:{legend:{position:'bottom', labels:{color:c.muted, boxWidth:10, padding:14, font:{size:11.5}}}}, cutout:'62%' }
   });
@@ -1038,7 +1212,7 @@ function makeCharts(){
   const casegEntries = Object.entries(DATA.ca_par_segment);
   new Chart(document.getElementById('chartCASeg'), {
     type:'bar',
-    data:{ labels: casegEntries.map(e=>e[0]), datasets:[{ data: casegEntries.map(e=>e[1]),
+    data:{ labels: casegEntries.map(e=>dataLabel(e[0])), datasets:[{ data: casegEntries.map(e=>e[1]),
       backgroundColor: casegEntries.map(e=>segmentColor(e[0])), borderRadius:4, maxBarThickness:34 }]},
     options:{ indexAxis:'y', plugins:{legend:{display:false}}, scales:{
       x:{ticks:{...baseTicks(), callback:v=>(v/1000000).toFixed(1)+'M'}, grid:baseGrid()},
@@ -1050,7 +1224,7 @@ function makeCharts(){
   const clsegEntries = Object.entries(DATA.clients_par_segment);
   new Chart(document.getElementById('chartClientSeg'), {
     type:'pie',
-    data:{ labels: clsegEntries.map(e=>e[0]), datasets:[{ data: clsegEntries.map(e=>e[1]), backgroundColor:clsegEntries.map(e=>segmentColor(e[0])), borderWidth:0 }]},
+    data:{ labels: clsegEntries.map(e=>dataLabel(e[0])), datasets:[{ data: clsegEntries.map(e=>e[1]), backgroundColor:clsegEntries.map(e=>segmentColor(e[0])), borderWidth:0 }]},
     options:{ plugins:{legend:{position:'bottom', labels:{color:c.muted, boxWidth:10, padding:10, font:{size:11}}}} }
   });
 
@@ -1069,7 +1243,7 @@ function makeCharts(){
   const canaux = DATA.performance_canaux;
   new Chart(document.getElementById('chartCanaux'), {
     type:'bar',
-    data:{ labels: canaux.map(x=>x.canal_acquisition), datasets:[{ label:'Satisfaction moy. (/5)', data: canaux.map(x=>x.satisfaction_moy),
+    data:{ labels: canaux.map(x=>dataLabel(x.canal_acquisition)), datasets:[{ label:currentLanguage === 'en' ? 'Average satisfaction (/5)' : 'Satisfaction moy. (/5)', data: canaux.map(x=>x.satisfaction_moy),
       backgroundColor:c.accent4, borderRadius:4, maxBarThickness:30 }]},
     options:{ plugins:{legend:{display:false}}, scales:{
       x:{ticks:{...baseTicks(), maxRotation:20, minRotation:20}, grid:{display:false}},
@@ -1081,7 +1255,7 @@ function makeCharts(){
   const sent = DATA.sentiment_avis;
   new Chart(document.getElementById('chartSentiment'), {
     type:'doughnut',
-    data:{ labels:Object.keys(sent), datasets:[{ data:Object.values(sent), backgroundColor:Object.keys(sent).map(label=>categoryColor(label, sentimentColors)), borderWidth:0 }]},
+    data:{ labels:Object.keys(sent).map(dataLabel), datasets:[{ data:Object.values(sent), backgroundColor:Object.keys(sent).map(label=>categoryColor(label, sentimentColors)), borderWidth:0 }]},
     options:{ plugins:{legend:{position:'bottom', labels:{color:c.muted, boxWidth:10, padding:12, font:{size:11.5}}}}, cutout:'55%' }
   });
 
@@ -1089,7 +1263,7 @@ function makeCharts(){
   const th = DATA.themes_avis;
   new Chart(document.getElementById('chartThemes'), {
     type:'bar',
-    data:{ labels:Object.keys(th), datasets:[{ data:Object.values(th), backgroundColor:barPalette, borderRadius:4, maxBarThickness:26 }]},
+    data:{ labels:Object.keys(th).map(dataLabel), datasets:[{ data:Object.values(th), backgroundColor:barPalette, borderRadius:4, maxBarThickness:26 }]},
     options:{ indexAxis:'y', plugins:{legend:{display:false}}, scales:{
       x:{ticks:baseTicks(), grid:baseGrid()}, y:{ticks:baseTicks(), grid:{display:false}}
     }}
@@ -1099,7 +1273,7 @@ function makeCharts(){
   const mot = DATA.motifs_reclamations;
   new Chart(document.getElementById('chartMotifs'), {
     type:'bar',
-    data:{ labels:Object.keys(mot), datasets:[{ data:Object.values(mot), backgroundColor: c.accent3, borderRadius:4, maxBarThickness:28 }]},
+    data:{ labels:Object.keys(mot).map(dataLabel), datasets:[{ data:Object.values(mot), backgroundColor: c.accent3, borderRadius:4, maxBarThickness:28 }]},
     options:{ indexAxis:'y', plugins:{legend:{display:false}}, scales:{
       x:{ticks:baseTicks(), grid:baseGrid()}, y:{ticks:baseTicks(), grid:{display:false}}
     }}
@@ -1109,7 +1283,7 @@ function makeCharts(){
   const gr = DATA.gravite_reclamations;
   new Chart(document.getElementById('chartGravite'), {
     type:'doughnut',
-    data:{ labels:Object.keys(gr), datasets:[{ data:Object.values(gr), backgroundColor:Object.keys(gr).map(label=>categoryColor(label, severityColors)), borderWidth:0 }]},
+    data:{ labels:Object.keys(gr).map(dataLabel), datasets:[{ data:Object.values(gr), backgroundColor:Object.keys(gr).map(label=>categoryColor(label, severityColors)), borderWidth:0 }]},
     options:{ plugins:{legend:{position:'bottom', labels:{color:c.muted, boxWidth:10, padding:12, font:{size:11.5}}}}, cutout:'55%' }
   });
 }
@@ -1272,7 +1446,7 @@ function wireChatbot(){
       } catch(e) {}
     }
     if(!claudeSample){
-      answer.textContent = localAgentResponse(value);
+      answer.textContent = localizeGenerated(localAgentResponse(value));
       log.scrollTop = log.scrollHeight;
       return;
     }
@@ -1280,9 +1454,9 @@ function wireChatbot(){
       const result = await claudeSample([
         {role:'user', content: CONTEXT_SUMMARY + "\n\nQuestion : " + value}
       ], {modelTier:'default', onText:({text})=>{ answer.textContent = text; log.scrollTop = log.scrollHeight; }});
-      answer.textContent = result.text;
+      answer.textContent = localizeGenerated(result.text);
     } catch(error) {
-      answer.textContent = localAgentResponse(value);
+      answer.textContent = localizeGenerated(localAgentResponse(value));
     }
     log.scrollTop = log.scrollHeight;
   }
@@ -1342,8 +1516,8 @@ function wireInteractions(){
 wireInteractions();
 document.getElementById('languageToggle').addEventListener('click', ()=>{
   currentLanguage = currentLanguage === 'fr' ? 'en' : 'fr';
-  applyLanguage();
-  applyTheme(document.documentElement.getAttribute('data-theme'));
+  localStorage.setItem('elavagnon-language', currentLanguage);
+  location.reload();
 });
 applyLanguage();
 if (typeof Chart !== 'undefined') {
