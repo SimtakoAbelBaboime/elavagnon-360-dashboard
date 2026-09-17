@@ -279,6 +279,9 @@ select,input[type=text],input[type=file]{
 .draft-label{display:block;margin-top:12px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
 .draft-message{width:100%;min-height:92px;margin-top:6px;resize:vertical;font:inherit;font-size:13px;line-height:1.5;color:var(--ink);background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:9px 10px;}
 .copy-message{margin-top:7px;}
+.explain-chart{margin-top:8px;}
+.chart-explanation{margin-top:8px;border-left:2px solid var(--accent-4);padding:9px 12px;background:var(--panel-2);font-size:12.5px;color:var(--ink);white-space:pre-wrap;display:none;}
+.chart-explanation.show{display:block;}
 .upload-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:16px;}
 .upload-card{border:1px solid var(--border);background:var(--panel);padding:14px 16px;border-radius:var(--radius);}
 .upload-card h3{font-size:14px;margin-bottom:4px;}
@@ -352,7 +355,7 @@ select,input[type=text],input[type=file]{
       <button data-view="relation">Relation client</button>
       <div class="grp-label">Données &amp; IA</div>
       <button data-view="clients">Clients (200)</button>
-      <button data-view="agents">Agents IA</button>
+      <button data-view="chatbot">Chatbot IA</button>
       <button data-view="imports">Importer des données</button>
     </nav>
     <div class="sidebar-foot">
@@ -437,6 +440,28 @@ function localAgentResponse(prompt){
     : segment === 'Acheteur Opportuniste' ? 'un pack d’entrée clair et abordable'
     : 'une recommandation complémentaire à son historique';
 
+  if (text.includes('graphique') && (text.includes('explique') || text.includes('expliquer'))) {
+    const chart = text.match(/graphique\s+([a-z_]+)/)?.[1] || '';
+    const topSegment = Object.entries(DATA.ca_par_segment).sort((a,b)=>b[1]-a[1])[0];
+    const topProduct = Object.values(DATA.top_produits_par_segment).flat().sort((a,b)=>b.ca-a.ca)[0];
+    const topTheme = Object.entries(DATA.themes_avis).sort((a,b)=>b[1]-a[1])[0];
+    const topMotif = Object.entries(DATA.motifs_reclamations).sort((a,b)=>b[1]-a[1])[0];
+    const topChannel = [...DATA.performance_canaux].sort((a,b)=>b.ca_moyen-a.ca_moyen)[0];
+    const explanations = {
+      ca_mensuel: `Ce graphique montre l'évolution du chiffre d'affaires mois par mois. Le niveau le plus élevé apparaît en ${DATA.ca_mensuel.labels[DATA.ca_mensuel.valeurs.indexOf(Math.max(...DATA.ca_mensuel.valeurs))]} avec ${fmtFCFA(Math.max(...DATA.ca_mensuel.valeurs))}. À retenir : repérez les mois forts pour planifier les campagnes et les mois faibles pour préparer une relance.`,
+      risque_churn: `Ce graphique répartit les ${DATA.kpi_globaux.nb_clients} clients selon leur risque de départ. ${DATA.risque_churn['Élevé']} clients sont à risque élevé, ${DATA.risque_churn['Moyen']} à risque moyen et ${DATA.risque_churn['Faible']} à risque faible. À retenir : commencez par les profils élevés et traitez leurs réclamations avant de proposer une offre.`,
+      ca_segment: `Ce graphique compare le chiffre d'affaires par segment. « ${topSegment[0]} » arrive en tête avec ${fmtFCFA(topSegment[1])}. À retenir : adaptez les investissements marketing à la valeur de chaque segment, sans négliger la réactivation des segments dormants.`,
+      clients_segment: `Ce graphique montre la taille de chaque segment, et non leur chiffre d'affaires. Le segment le plus nombreux est « ${Object.entries(DATA.clients_par_segment).sort((a,b)=>b[1]-a[1])[0][0]} ». À retenir : un segment nombreux n'est pas forcément le plus rentable ; comparez-le avec le graphique de CA par segment.`,
+      top_produits: `Ce graphique présente les produits les plus performants pour le segment sélectionné. Le meilleur produit dans l'ensemble des segments est ${topProduct.produit}, avec ${fmtFCFA(topProduct.ca)} cumulés dans les résultats affichés. À retenir : choisissez un produit déjà apprécié avant de construire une campagne.`,
+      canaux: `Ce graphique compare la satisfaction moyenne selon le canal d'acquisition. Le canal au CA moyen le plus élevé est ${topChannel.canal_acquisition}, avec ${fmtFCFA(topChannel.ca_moyen)} par client. À retenir : combinez rentabilité et satisfaction avant d'augmenter un budget.`,
+      sentiment: `Ce graphique résume le ton des ${Object.values(DATA.sentiment_avis).reduce((sum,value)=>sum+value,0)} avis. Les avis positifs sont majoritaires (${DATA.sentiment_avis.Positif}), mais ${DATA.sentiment_avis.Négatif} avis négatifs nécessitent un suivi. À retenir : utilisez les retours négatifs pour améliorer l'expérience, pas seulement pour mesurer la satisfaction.`,
+      themes: `Ce graphique regroupe les sujets mentionnés dans les avis. Le thème le plus fréquent est « ${topTheme[0]} » avec ${topTheme[1]} mentions. À retenir : transformez ce thème prioritaire en action concrète dans le parcours client.`,
+      motifs: `Ce graphique classe les motifs de réclamation. « ${topMotif[0]} » est le motif le plus fréquent avec ${topMotif[1]} cas. À retenir : traitez sa cause racine et mesurez chaque semaine la baisse des nouvelles réclamations.`,
+      gravite: `Ce graphique montre la gravité des réclamations. ${DATA.gravite_reclamations['Élevée']} réclamations sont élevées, ${DATA.gravite_reclamations['Moyenne']} moyennes et ${DATA.gravite_reclamations['Faible']} faibles. À retenir : priorisez les cas élevés, puis confirmez personnellement leur résolution.`
+    };
+    return explanations[chart] || 'Ce graphique résume une partie des données clients. Regardez d’abord la catégorie la plus importante, puis comparez-la aux autres pour décider où agir en priorité.';
+  }
+
   if (profile && (text.includes('plan d\'action') || text.includes('rétention') || text.includes('risque élevé'))) {
     return `- Priorité ${urgency} pour ${profile.client_id}, à ${city} : risque ${Math.round(risk)}/100 et dernier achat il y a ${Math.round(recency)} jours.\n- Contact : ${contact}, avec un message qui reconnaît son historique de ${Math.round(orders)} commande(s).\n- Satisfaction actuelle : ${satisfaction}/5 ; commencez par résoudre ou vérifier toute insatisfaction avant de vendre.\n- Proposition : ${offer}.\n- Objectif cette semaine : obtenir une réponse et programmer un prochain achat.`;
   }
@@ -490,6 +515,22 @@ function localAgentResponse(prompt){
     return `- Le chiffre d'affaires atteint ${fmtFCFA(DATA.kpi_globaux.ca_total)} sur ${DATA.kpi_globaux.nb_commandes} commandes.\n- ${DATA.kpi_globaux.taux_actifs_90j}% des clients ont acheté dans les 90 derniers jours.\n- La satisfaction moyenne est de ${DATA.kpi_globaux.satisfaction_moyenne}/5.\n- Priorités : réduire les réclamations non résolues, réactiver les clients à risque et développer le cross-sell.`;
   }
   return `- La base compte ${DATA.kpi_globaux.nb_clients} clients et ${DATA.kpi_globaux.nb_commandes} commandes.\n- Le chiffre d'affaires total est de ${fmtFCFA(DATA.kpi_globaux.ca_total)}.\n- Les clients actifs représentent ${DATA.kpi_globaux.taux_actifs_90j}% de la base.\n- Consultez les vues Marketing, Commercial et Relation client pour une recommandation ciblée.`;
+}
+
+function explainChart(chartKey, button){
+  const output = document.getElementById(`explain-${chartKey}`);
+  if (!output) return;
+  if (output.classList.contains('show')) {
+    output.classList.remove('show');
+    button.textContent = 'Expliquer ce graphique';
+    button.setAttribute('aria-expanded', 'false');
+    return;
+  }
+  button.textContent = 'Masquer l’explication';
+  button.setAttribute('aria-expanded', 'true');
+  output.classList.add('show');
+  output.innerHTML = '<span class="loading-dots"><span></span><span></span><span></span></span>';
+  askAgent(`Explique le graphique ${chartKey} à une personne qui ne maîtrise pas les données. Donne ce que l'on voit, le chiffre important et une action concrète.`, output);
 }
 
 function profileFromPrompt(prompt){
@@ -598,6 +639,22 @@ function chartColors(){
     accent: cssVar('--accent'), accent2: cssVar('--accent-2'), accent3: cssVar('--accent-3'), accent4: cssVar('--accent-4')
   };
 }
+function categoryColor(label, palette){
+  return palette[label] || cssVar('--muted');
+}
+function segmentColor(label){
+  return categoryColor(label, {
+    'Brand Lover':'#2F6F4E',
+    'Régulier':'#2B5D82',
+    'Acheteur Opportuniste':'#B7791F',
+    'Explorateur à risque':'#B23B32',
+    'Dormant':'#8B6FD6',
+    'Prospect / Jamais acheté':'#4FB6C4'
+  });
+}
+const riskColors = {'Élevé':'#B23B32','Moyen':'#B7791F','Faible':'#2F6F4E'};
+const sentimentColors = {'Positif':'#2F6F4E','Neutre':'#8A8474','Négatif':'#B23B32'};
+const severityColors = {'Élevée':'#B23B32','Moyenne':'#B7791F','Faible':'#2F6F4E'};
 const charts = [];
 function registerChart(c){ charts.push(c); }
 function baseGrid(){ const c = chartColors(); return { color: c.border, drawTicks:false }; }
@@ -611,7 +668,7 @@ main.innerHTML = `
 <section class="view" id="view-commercial">${commercialHTML()}</section>
 <section class="view" id="view-relation">${relationHTML()}</section>
 <section class="view" id="view-clients">${clientsHTML()}</section>
-<section class="view" id="view-agents">${agentsHTML()}</section>
+<section class="view" id="view-chatbot">${chatbotHTML()}</section>
 <section class="view" id="view-imports">${importsHTML()}</section>
 `;
 
@@ -632,17 +689,21 @@ function overviewHTML(){
   <div class="grid two">
     <div class="panel"><h3>Évolution du chiffre d'affaires</h3><p class="panel-sub">CA mensuel, janvier 2025 – septembre 2026</p>
       <div class="chart-wrap"><canvas id="chartCA"></canvas></div>
+      <button class="btn sm ghost explain-chart" data-explain-chart="ca_mensuel">Expliquer ce graphique</button><div class="chart-explanation" id="explain-ca_mensuel"></div>
     </div>
     <div class="panel"><h3>Répartition du risque de churn</h3><p class="panel-sub">Score IA combinant récence, réclamations et satisfaction</p>
       <div class="chart-wrap"><canvas id="chartRisk"></canvas></div>
+      <button class="btn sm ghost explain-chart" data-explain-chart="risque_churn">Expliquer ce graphique</button><div class="chart-explanation" id="explain-risque_churn"></div>
     </div>
   </div>
   <div class="grid two" style="margin-top:16px;">
     <div class="panel"><h3>Chiffre d'affaires par segment</h3><p class="panel-sub">Où se trouve la valeur client aujourd'hui</p>
       <div class="chart-wrap"><canvas id="chartCASeg"></canvas></div>
+      <button class="btn sm ghost explain-chart" data-explain-chart="ca_segment">Expliquer ce graphique</button><div class="chart-explanation" id="explain-ca_segment"></div>
     </div>
     <div class="panel"><h3>Clients par segment</h3><p class="panel-sub">Répartition de la base (200 clients)</p>
       <div class="chart-wrap"><canvas id="chartClientSeg"></canvas></div>
+      <button class="btn sm ghost explain-chart" data-explain-chart="clients_segment">Expliquer ce graphique</button><div class="chart-explanation" id="explain-clients_segment"></div>
     </div>
   </div>
   <div class="agent-card" style="margin-top:16px;">
@@ -667,18 +728,22 @@ function marketingHTML(){
       <h3>Produits stars par segment</h3><p class="panel-sub">Sélectionnez un segment pour voir son top 3</p>
       <select id="segSelect">${opts}</select>
       <div class="chart-wrap" style="margin-top:12px;"><canvas id="chartTopProd"></canvas></div>
+      <button class="btn sm ghost explain-chart" data-explain-chart="top_produits">Expliquer ce graphique</button><div class="chart-explanation" id="explain-top_produits"></div>
     </div>
     <div class="panel">
       <h3>Performance des canaux d'acquisition</h3><p class="panel-sub">Satisfaction moyenne des clients acquis par canal</p>
       <div class="chart-wrap"><canvas id="chartCanaux"></canvas></div>
+      <button class="btn sm ghost explain-chart" data-explain-chart="canaux">Expliquer ce graphique</button><div class="chart-explanation" id="explain-canaux"></div>
     </div>
   </div>
   <div class="grid two" style="margin-top:16px;">
     <div class="panel"><h3>Sentiment des avis clients (NLP)</h3><p class="panel-sub">${DATA.sentiment_avis.Positif+DATA.sentiment_avis.Neutre+DATA.sentiment_avis.Négatif} avis analysés automatiquement</p>
       <div class="chart-wrap sm"><canvas id="chartSentiment"></canvas></div>
+      <button class="btn sm ghost explain-chart" data-explain-chart="sentiment">Expliquer ce graphique</button><div class="chart-explanation" id="explain-sentiment"></div>
     </div>
     <div class="panel"><h3>Thèmes récurrents des avis</h3><p class="panel-sub">Détection automatique des sujets mentionnés</p>
       <div class="chart-wrap sm"><canvas id="chartThemes"></canvas></div>
+      <button class="btn sm ghost explain-chart" data-explain-chart="themes">Expliquer ce graphique</button><div class="chart-explanation" id="explain-themes"></div>
     </div>
   </div>
   <div class="agent-card" style="margin-top:16px;">
@@ -744,9 +809,11 @@ function relationHTML(){
   <div class="grid two">
     <div class="panel"><h3>Motifs de réclamation</h3><p class="panel-sub">120 réclamations classifiées</p>
       <div class="chart-wrap sm"><canvas id="chartMotifs"></canvas></div>
+      <button class="btn sm ghost explain-chart" data-explain-chart="motifs">Expliquer ce graphique</button><div class="chart-explanation" id="explain-motifs"></div>
     </div>
     <div class="panel"><h3>Gravité des réclamations</h3><p class="panel-sub">Répartition par niveau</p>
       <div class="chart-wrap sm"><canvas id="chartGravite"></canvas></div>
+      <button class="btn sm ghost explain-chart" data-explain-chart="gravite">Expliquer ce graphique</button><div class="chart-explanation" id="explain-gravite"></div>
     </div>
   </div>
   <div class="section-title">Réclamations à traiter en priorité</div>
@@ -811,43 +878,34 @@ function importsHTML(){
   `;
 }
 
-function agentsHTML(){
+function chatbotHTML(){
   return `
   <div class="view-head">
-    <div><div class="eyebrow">Comment ça marche</div><h2>Les agents IA du tableau de bord</h2>
-    <p>Trois moteurs travaillent en continu sur vos données : un agent d'analyse de texte, un agent prédictif, et un agent conversationnel de synthèse.</p></div>
+    <div><div class="eyebrow">Assistant décisionnel</div><h2>Chatbot IA ELAVAGNON</h2>
+    <p>Posez une question en langage naturel sur vos clients, vos ventes, vos produits ou vos priorités. Les réponses s'appuient sur les données du dashboard.</p></div>
   </div>
   <div class="grid three">
-    <div class="agent-card">
-      <div class="tag"><span class="dot"></span>Agent NLP</div>
-      <h4 style="font-size:14px;margin-bottom:6px;">Lecture des avis &amp; réclamations</h4>
-      <p>Catégorise automatiquement le sentiment (<code>Positif / Neutre / Négatif</code>) et les thèmes de chaque commentaire client, pour transformer des centaines de messages en signaux exploitables sans lecture manuelle.</p>
-    </div>
-    <div class="agent-card">
-      <div class="tag"><span class="dot"></span>Agent prédictif</div>
-      <h4 style="font-size:14px;margin-bottom:6px;">Score de risque de churn</h4>
-      <p>Combine la récence d'achat, les réclamations non résolues et la satisfaction en un score 0-100 par client, pour agir avant le départ plutôt qu'après.</p>
-    </div>
-    <div class="agent-card">
-      <div class="tag"><span class="dot"></span>Agent générateur</div>
-      <h4 style="font-size:14px;margin-bottom:6px;">Synthèses &amp; recommandations</h4>
-      <p>Rédige, à la demande, des messages de relance, idées de campagne et synthèses exécutives ancrées dans les chiffres réels du tableau de bord.</p>
-    </div>
+    <div class="agent-card"><div class="tag"><span class="dot"></span>Analyse NLP</div><h4 style="font-size:14px;margin-bottom:6px;">Avis &amp; réclamations</h4><p>Identifie le sentiment et les thèmes récurrents pour transformer les retours clients en actions concrètes.</p></div>
+    <div class="agent-card"><div class="tag"><span class="dot"></span>Analyse prédictive</div><h4 style="font-size:14px;margin-bottom:6px;">Risque de churn</h4><p>Combine récence, satisfaction et réclamations pour aider les équipes à prioriser les relances.</p></div>
+    <div class="agent-card"><div class="tag"><span class="dot"></span>Assistant génératif</div><h4 style="font-size:14px;margin-bottom:6px;">Réponses &amp; messages</h4><p>Explique les graphiques, propose des actions et rédige des brouillons de messages ou de newsletters.</p></div>
   </div>
-  <div class="section-title">Poser une question à l'agent IA</div>
-  <div class="chat-box">
-    <div class="chat-log" id="chatLog"></div>
+  <div class="section-title">Poser une question au chatbot</div>
+  <div class="chat-box chatbot-panel">
+    <div class="chat-log" id="chatbotLog">
+      <div class="msg ai">Bonjour. Je peux vous aider à comprendre vos résultats et à choisir une action concrète. Que souhaitez-vous analyser ?</div>
+    </div>
     <div class="chat-input-row">
-      <input type="text" id="chatInput" placeholder="Ex : Quel segment devrait-on prioriser ce mois-ci ?">
-      <button class="btn" id="chatSend">Envoyer</button>
+      <input type="text" id="chatbotInput" placeholder="Ex : Quel segment faut-il prioriser ce mois-ci ?">
+      <button class="btn" id="chatbotSend">Envoyer</button>
     </div>
     <div class="suggestions">
-      <button class="suggestion-chip" data-q="Quels sont les 3 signaux d'alerte de churn les plus importants en ce moment ?">Signaux d'alerte churn</button>
-      <button class="suggestion-chip" data-q="Quel produit devrait-on pousser en priorité ce mois-ci et pourquoi ?">Produit à pousser</button>
-      <button class="suggestion-chip" data-q="Quel canal d'acquisition est le plus rentable et lequel faut-il revoir ?">Canal le plus rentable</button>
+      <button class="suggestion-chip" data-chatbot-q="Quel segment génère le plus de chiffre d'affaires ?">Segment le plus rentable</button>
+      <button class="suggestion-chip" data-chatbot-q="Quels clients dois-je recontacter en priorité ?">Clients à recontacter</button>
+      <button class="suggestion-chip" data-chatbot-q="Quel produit devrait-on pousser ce mois-ci ?">Produit à pousser</button>
+      <button class="suggestion-chip" data-chatbot-q="Que révèlent les avis clients ?">Avis clients</button>
     </div>
   </div>
-  <p class="foot-note">Les analyses de segmentation, de sentiment et de risque sont calculées à partir des données réelles (clients, achats, avis, réclamations). Les réponses générées par l'agent conversationnel s'appuient sur ce même résumé chiffré — elles ne remplacent pas un avis humain sur des décisions à fort enjeu.</p>
+  <div class="upload-note"><strong>À savoir :</strong> le chatbot peut répondre avec le mode IA hébergé lorsqu'il est disponible. Sinon, il utilise automatiquement une analyse locale basée sur les chiffres actuellement chargés dans le dashboard.</div>
   `;
 }
 
@@ -874,7 +932,7 @@ function makeCharts(){
   new Chart(document.getElementById('chartRisk'), {
     type:'doughnut',
     data:{ labels:Object.keys(rk), datasets:[{ data:Object.values(rk),
-      backgroundColor:[c.accent3, c.accent, c.accent2], borderWidth:0 }]},
+      backgroundColor:Object.keys(rk).map(label=>categoryColor(label, riskColors)), borderWidth:0 }]},
     options:{ plugins:{legend:{position:'bottom', labels:{color:c.muted, boxWidth:10, padding:14, font:{size:11.5}}}}, cutout:'62%' }
   });
 
@@ -883,7 +941,7 @@ function makeCharts(){
   new Chart(document.getElementById('chartCASeg'), {
     type:'bar',
     data:{ labels: casegEntries.map(e=>e[0]), datasets:[{ data: casegEntries.map(e=>e[1]),
-      backgroundColor: barPalette, borderRadius:4, maxBarThickness:34 }]},
+      backgroundColor: casegEntries.map(e=>segmentColor(e[0])), borderRadius:4, maxBarThickness:34 }]},
     options:{ indexAxis:'y', plugins:{legend:{display:false}}, scales:{
       x:{ticks:{...baseTicks(), callback:v=>(v/1000000).toFixed(1)+'M'}, grid:baseGrid()},
       y:{ticks:baseTicks(), grid:{display:false}}
@@ -894,7 +952,7 @@ function makeCharts(){
   const clsegEntries = Object.entries(DATA.clients_par_segment);
   new Chart(document.getElementById('chartClientSeg'), {
     type:'pie',
-    data:{ labels: clsegEntries.map(e=>e[0]), datasets:[{ data: clsegEntries.map(e=>e[1]), backgroundColor:barPalette, borderWidth:0 }]},
+    data:{ labels: clsegEntries.map(e=>e[0]), datasets:[{ data: clsegEntries.map(e=>e[1]), backgroundColor:clsegEntries.map(e=>segmentColor(e[0])), borderWidth:0 }]},
     options:{ plugins:{legend:{position:'bottom', labels:{color:c.muted, boxWidth:10, padding:10, font:{size:11}}}} }
   });
 
@@ -925,7 +983,7 @@ function makeCharts(){
   const sent = DATA.sentiment_avis;
   new Chart(document.getElementById('chartSentiment'), {
     type:'doughnut',
-    data:{ labels:Object.keys(sent), datasets:[{ data:Object.values(sent), backgroundColor:[c.accent2, c.muted, c.accent3], borderWidth:0 }]},
+    data:{ labels:Object.keys(sent), datasets:[{ data:Object.values(sent), backgroundColor:Object.keys(sent).map(label=>categoryColor(label, sentimentColors)), borderWidth:0 }]},
     options:{ plugins:{legend:{position:'bottom', labels:{color:c.muted, boxWidth:10, padding:12, font:{size:11.5}}}}, cutout:'55%' }
   });
 
@@ -953,7 +1011,7 @@ function makeCharts(){
   const gr = DATA.gravite_reclamations;
   new Chart(document.getElementById('chartGravite'), {
     type:'doughnut',
-    data:{ labels:Object.keys(gr), datasets:[{ data:Object.values(gr), backgroundColor:[c.accent, c.accent3, c.accent2], borderWidth:0 }]},
+    data:{ labels:Object.keys(gr), datasets:[{ data:Object.values(gr), backgroundColor:Object.keys(gr).map(label=>categoryColor(label, severityColors)), borderWidth:0 }]},
     options:{ plugins:{legend:{position:'bottom', labels:{color:c.muted, boxWidth:10, padding:12, font:{size:11.5}}}}, cutout:'55%' }
   });
 }
@@ -1091,9 +1149,62 @@ function showClientDetail(id){
   el.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 
+function wireChatbot(){
+  const log = document.getElementById('chatbotLog');
+  const input = document.getElementById('chatbotInput');
+  const send = document.getElementById('chatbotSend');
+  if (!log || !input || !send) return;
+  function addMessage(role, text){
+    const message = document.createElement('div');
+    message.className = `msg ${role}`;
+    message.textContent = text;
+    log.appendChild(message);
+    log.scrollTop = log.scrollHeight;
+    return message;
+  }
+  async function sendQuestion(question){
+    const value = question.trim();
+    if (!value) return;
+    addMessage('user', value);
+    input.value = '';
+    const answer = addMessage('ai', 'Analyse en cours…');
+    if(!claudeSample){
+      try {
+        if (typeof claude !== 'undefined') claudeSample = await claude.use('sample');
+      } catch(e) {}
+    }
+    if(!claudeSample){
+      answer.textContent = localAgentResponse(value);
+      log.scrollTop = log.scrollHeight;
+      return;
+    }
+    try {
+      const result = await claudeSample([
+        {role:'user', content: CONTEXT_SUMMARY + "\n\nQuestion : " + value}
+      ], {modelTier:'default', onText:({text})=>{ answer.textContent = text; log.scrollTop = log.scrollHeight; }});
+      answer.textContent = result.text;
+    } catch(error) {
+      answer.textContent = localAgentResponse(value);
+    }
+    log.scrollTop = log.scrollHeight;
+  }
+  send.addEventListener('click', ()=>sendQuestion(input.value));
+  input.addEventListener('keydown', event=>{
+    if(event.key === 'Enter') sendQuestion(input.value);
+  });
+  document.querySelectorAll('[data-chatbot-q]').forEach(button=>{
+    button.addEventListener('click', ()=>sendQuestion(button.dataset.chatbotQ));
+  });
+}
+
 /* ============ WIRE UP INTERACTIONS ============ */
 function wireInteractions(){
   wireImportControls();
+  wireChatbot();
+  document.getElementById('main').addEventListener('click', e=>{
+    const explainButton = e.target.closest('[data-explain-chart]');
+    if (explainButton) explainChart(explainButton.dataset.explainChart, explainButton);
+  });
   document.getElementById('clientSearch').addEventListener('input', renderClientTable);
   document.getElementById('filterSeg').addEventListener('change', renderClientTable);
   document.getElementById('filterRisk').addEventListener('change', renderClientTable);
@@ -1130,6 +1241,7 @@ function wireInteractions(){
 
   // chat
   const chatLog = document.getElementById('chatLog');
+  if (!chatLog) return;
   function addMsg(role, text){
     const div = document.createElement('div');
     div.className = 'msg ' + role;
@@ -1157,7 +1269,7 @@ function wireInteractions(){
   }
   document.getElementById('chatSend').addEventListener('click', ()=>sendChat(document.getElementById('chatInput').value));
   document.getElementById('chatInput').addEventListener('keydown', e=>{ if(e.key==='Enter') sendChat(e.target.value); });
-  document.querySelectorAll('.suggestion-chip').forEach(chip=>{
+  chatLog.parentElement.querySelectorAll('.suggestion-chip').forEach(chip=>{
     chip.addEventListener('click', ()=>sendChat(chip.dataset.q));
   });
 }
